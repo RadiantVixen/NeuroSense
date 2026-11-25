@@ -206,8 +206,9 @@ details[open] summary::after { content: "−"; }
 details > div { padding-bottom: 16px; color: var(--text-2); font-size: 14.5px; }
 details > div p { margin: 0 0 10px; }
 
-.reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.7s ease, transform 0.7s ease; }
-.reveal.in { opacity: 1; transform: none; }
+/* fade-in only when JavaScript is running (html.js is set inline in <head>) */
+.js .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.js .reveal.in { opacity: 1; transform: none; }
 
 footer { border-top: 1px solid var(--line); margin-top: 80px; padding-block: 32px calc(32px + env(safe-area-inset-bottom, 0px)); color: var(--text-3); font-size: 13px; }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
@@ -219,3 +220,17 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
 .katex-display { overflow-x: auto; overflow-y: hidden; padding-block: 4px; }
 
 table caption { caption-side: bottom; text-align: left; padding-top: 8px; color: var(--text-3); font-size: 12.5px; }
+
+.prose { max-width: 820px; }
+.prose p { color: var(--text-2); font-size: 15.5px; margin: 14px 0 0; }
+.prose p strong, .prose p em { color: var(--text); }
+.card.prose { max-width: none; }
+.card.prose p { font-size: 14.5px; }
+.finding p { color: var(--text-2); margin: 8px 0 0; font-size: 14.5px; }
+.finding .num { color: var(--text); font-weight: 600; }
+ul.limitations li { padding: 12px 0 12px 18px; color: var(--text-2); }
+ul.limitations li strong { color: var(--text); }
+td.section-head { color: var(--cyan); font: 600 11.5px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; padding-top: 16px; }
+td.note, th.note { white-space: normal; text-align: left; color: var(--text-3); font-size: 12px; min-width: 220px; }
+.table-note { color: var(--text-3); font-size: 12.5px; margin: 10px 0 0; padding-left: 0; list-style: none; }
+ul.table-note li { margin-top: 4px; }

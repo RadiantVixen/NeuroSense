@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NeuroSense — EEG Cognitive Workload Estimation</title>
-<meta name="description" content="Research pipeline estimating task-induced cognitive workload from 14-channel EEG (STEW dataset): signal processing, feature engineering, subject-independent machine learning.">
+<title>NeuroSense — rest vs. multitasking from EEG (STEW)</title>
+<meta name="description" content="Classifying resting EEG versus EEG recorded during a multitasking test, in participants the model was not trained on. STEW dataset, 48 participants, 14 channels.">
 <meta name="theme-color" content="#08101f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f1b33'/%3E%3Cpath d='M3 17h5l2-6 4 12 4-16 3 10h8' fill='none' stroke='%232fd3e6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script>document.documentElement.classList.add("js");</script>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
@@ -23,36 +24,38 @@
       NeuroSense
     </a>
     <div class="nav-links">
-      <a href="#about">About</a>
-      <a href="#explorer">EEG Explorer</a>
-      <a href="#processing">Signal Processing</a>
-      <a href="#ml">Machine Learning</a>
-      <a href="#insights">Insights</a>
-      <a href="#docs">Documentation</a>
+      <a href="#about">Question</a>
+      <a href="#explorer">Signals</a>
+      <a href="#processing">Processing</a>
+      <a href="#ml">Results</a>
+      <a href="#artifacts">Artifacts</a>
+      <a href="#insights">Findings</a>
+      <a href="#limitations">Limitations</a>
+      <a href="#docs">Methods</a>
+      <a href="#author">Author</a>
     </div>
   </div>
 </nav>
 
-<!-- ================================================================ HERO -->
 <header class="hero" id="top">
   <canvas id="hero-wave" aria-hidden="true"></canvas>
   <div class="wrap">
-    <span class="badge"><span class="dot"></span>Offline research prototype · recorded dataset, no live acquisition</span>
+    <span class="badge"><span class="dot"></span>Analysis of a recorded public dataset (STEW). No live headset.</span>
     <h1><span>NeuroSense</span></h1>
-    <p class="lead">EEG-based cognitive workload estimation. A reproducible pipeline that filters 14-channel EEG,
-      extracts spectral and time-domain features, and tests — on people the model has never seen — whether brain signals
-      reveal when someone is under multitasking load.</p>
+    <p class="lead">Each of 48 people wore a 14-channel EEG headset twice: once resting, once doing a multitasking test.
+      A classifier trained on some of them tells the two recordings apart in people it was not trained on.
+      It does not measure how much workload someone feels; that part did not work (see Findings).</p>
     <div class="cta">
-      <a class="btn primary" href="#ml">View results</a>
+      <a class="btn primary" href="#ml">Results</a>
       <a class="btn" href="https://github.com/RadiantVixen/NeuroSense" target="_blank" rel="noopener">
         <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub repository
+        Code on GitHub
       </a>
-      <a class="btn" href="#docs">How it works</a>
+      <a class="btn" href="#artifacts">Artifact checks</a>
     </div>
-    <div class="stats" id="hero-stats" aria-live="polite">
-      <div class="stat"><div class="v">48</div><div class="k">participants</div></div>
-      <div class="stat"><div class="v">14</div><div class="k">EEG channels · 128 Hz</div></div>
+    <div class="stats" id="hero-stats">
+      <div class="stat"><div class="v">48</div><div class="k">participants, 2 recordings each</div></div>
+      <div class="stat"><div class="v">14</div><div class="k">EEG channels at 128 Hz</div></div>
       <div class="stat"><div class="v" data-bind="hero.recAcc">86.5%</div><div class="k" data-bind="hero.recAccLabel">of recordings classified correctly, participants not seen in training (logistic regression)</div></div>
       <div class="stat"><div class="v" data-bind="hero.auc">0.88</div><div class="k" data-bind="hero.aucLabel">ROC-AUC on 4 s windows (95% CI 0.84–0.92)</div></div>
     </div>
@@ -60,61 +63,41 @@
 </header>
 
 <main>
-<noscript><div class="wrap"><p class="callout">The interactive charts need JavaScript. The headline numbers, the model table and the findings below are plain HTML.</p></div></noscript>
-<!-- ================================================================ ABOUT -->
+<noscript><div class="wrap"><p class="callout">The interactive charts need JavaScript. Headline numbers, tables and findings on this page are plain HTML.</p></div></noscript>
+
 <section id="about" class="wrap reveal">
-  <span class="eyebrow">01 · About</span>
-  <h2>Can EEG tell rest from mental multitasking — in a new person?</h2>
-  <p class="lead">Mental workload monitoring could support pilots, operators and learners, but EEG varies enormously between people.
-    NeuroSense asks a deliberately strict question: trained on some people, can a model detect task-induced workload in someone it has never seen?</p>
-  <div class="grid g3">
-    <div class="card">
-      <h3>Objective</h3>
-      <p class="muted">Build a transparent, end-to-end EEG pipeline — preprocessing, feature engineering, classical machine learning — and evaluate it
-        with participant-independent cross-validation so reported numbers reflect generalisation to new users.</p>
-    </div>
-    <div class="card">
-      <h3>Dataset — STEW</h3>
-      <dl class="kv">
-        <dt>Participants</dt><dd>48</dd>
-        <dt>Headset</dt><dd>Emotiv EPOC, 14 channels</dd>
-        <dt>Sampling</dt><dd>128 Hz, 2.5 min per recording</dd>
-        <dt>Conditions</dt><dd><span style="color:var(--rest)">●</span> rest · <span style="color:var(--test)">●</span> SIMKAP multitasking</dd>
-        <dt>Self-ratings</dt><dd>workload 1–9, 45 participants</dd>
-      </dl>
-    </div>
-    <div class="card">
-      <h3>Research motivation</h3>
-      <p class="muted">Most published STEW results mix windows from the same person into training and test sets, which inflates accuracy.
-        Here every evaluation is on held-out participants, artifacts are treated as a potential confound, and limitations are reported alongside results.</p>
-    </div>
-  </div>
-  <div class="callout warn">
-    <strong>What the labels mean.</strong> Per the dataset documentation, <code>lo</code> files are <em>resting-state</em> recordings and
-    <code>hi</code> files are recorded during the SIMKAP multitasking test. The task is therefore <strong>rest vs. task-induced workload</strong>,
-    not low- vs. high-difficulty task. All <span data-bind="about.nRated">45</span> rated participants reported higher workload during the test
-    (median <span data-bind="about.restMed">1</span> at rest vs <span data-bind="about.testMed">7</span> during the test, on a 1–9 scale).
+  <span class="eyebrow">01 · Question</span>
+  <h2>Rest or multitasking, in someone the model has not seen?</h2>
+  <div class="prose">
+    <p>The data come from STEW (Lim, Sourina &amp; Wang, 2018). Forty-eight people wore an Emotiv EPOC headset for two 2.5-minute recordings.
+      In the first they sat at rest. In the second they did SIMKAP, a test that has them search for matching items on screen while answering
+      arithmetic and memory questions. After each recording they rated their workload from 1 to 9.
+      The dataset files call these recordings <code>lo</code> and <code>hi</code>; per the documentation, <code>lo</code> is the resting recording,
+      not an easy version of the task.</p>
+    <p>All <span data-bind="about.nRated">45</span> people with ratings rated the test higher than rest
+      (median <span data-bind="about.restMed">1</span> at rest, <span data-bind="about.testMed">7</span> during the test).
+      The classification target here is therefore rest vs. test. Every model is evaluated on participants it was not trained on:
+      the 48 people are split into 8 groups of 6, and each group is predicted by a model trained on the other 42.</p>
   </div>
   <div class="grid g2">
     <div class="card">
-      <h3>Self-reported workload</h3>
-      <p class="sub">Each line is one participant; ratings jittered slightly to show overlaps.</p>
+      <h3>Self-rated workload</h3>
+      <p class="sub">One line per participant; points jittered slightly so overlapping ratings stay visible.</p>
       <div id="chart-ratings" class="chart short"></div>
     </div>
     <div class="card">
-      <h3>Electrode montage</h3>
-      <p class="sub">The 14 EPOC electrodes (10–20 positions). Eight of 14 are frontal — close to the eyes and forehead muscles.</p>
+      <h3>Electrode positions</h3>
+      <p class="sub">The 14 EPOC electrodes. Eight are frontal; AF3, AF4, F7 and F8 sit closest to the eyes.</p>
       <div id="chart-montage" class="chart short"></div>
     </div>
   </div>
 </section>
 
-<!-- ================================================================ EXPLORER -->
 <section id="explorer" class="wrap reveal">
-  <span class="eyebrow">02 · EEG Explorer</span>
-  <h2>Inspect the recorded signals</h2>
-  <p class="lead">A 10-second excerpt (60–70 s) of selected recordings, before and after preprocessing. This is <strong>playback of recorded data</strong>,
-    not a live headset stream.</p>
+  <span class="eyebrow">02 · Signals</span>
+  <h2>Ten seconds of the recordings</h2>
+  <p class="lead">Seconds 60–70 of eight recordings, before and after filtering. The first six come from the three participants with the fewest
+    rejected windows; the last two from the participant with the most.</p>
   <div class="card" style="margin-top:28px">
     <div class="controls">
       <label>Recording <select id="ex-rec" aria-label="Recording"></select></label>
@@ -132,55 +115,49 @@
   </div>
   <div class="grid g2">
     <div class="card">
-      <h3>Frequency spectrum</h3>
-      <p class="sub">Welch PSD of the whole recording for the first selected channel, raw vs. filtered (log scale).</p>
+      <h3>Spectrum of the first selected channel</h3>
+      <p class="sub">Welch power spectral density over the whole recording, raw and filtered, log scale.</p>
       <div id="chart-ex-psd" class="chart"></div>
     </div>
-    <div class="card">
-      <h3>What you are looking at</h3>
-      <ul class="clean">
-        <li><strong>Raw</strong> signals carry a ~4 300-unit DC offset (removed for display) and slow drift.</li>
-        <li><strong>Filtered</strong> signals: 50 Hz notch + zero-phase 1–45 Hz Butterworth band-pass.</li>
-        <li>Large slow deflections on AF3/AF4/F7/F8 are typically <strong>eye blinks or movements</strong>; sharp bursts on T7/T8 are often <strong>jaw/temporal muscle</strong>.</li>
-        <li>The steep drop above ~42 Hz in every raw spectrum is the headset's on-board filter — the reason the analysis stops at 45 Hz.</li>
-        <li>The last recording in the list is the participant with the <em>most</em> rejected windows, shown for honesty.</li>
-      </ul>
+    <div class="card prose">
+      <h3>Reading the traces</h3>
+      <p>The raw signal sits on a constant offset of several thousand units, removed here for display, and drifts slowly. Large slow waves on AF3, AF4, F7 and
+        F8 are mostly blinks and eye movements. Short high-frequency bursts on T7 and T8 are usually jaw or temple muscle.</p>
+      <p>Every raw spectrum falls steeply above about 42&nbsp;Hz because the headset filters its own output. The analysis therefore stops at 45&nbsp;Hz.</p>
     </div>
   </div>
 </section>
 
-<!-- ================================================================ PROCESSING -->
 <section id="processing" class="wrap reveal">
-  <span class="eyebrow">03 · Signal Processing</span>
-  <h2>From voltages to features</h2>
-  <p class="lead">Each step is label-blind and applied identically to every recording. Learned transforms (scaling, imputation) live inside the cross-validated model.</p>
-  <div class="pipeline" aria-label="Processing pipeline">
-    <div class="step"><div class="n">01</div><h4>Mask</h4><p>Saturated / flat samples flagged on raw data, ±1 s margin.</p></div>
-    <div class="step"><div class="n">02</div><h4>Filter</h4><p>Median DC removal, 50 Hz notch, 1–45 Hz zero-phase band-pass.</p></div>
-    <div class="step"><div class="n">03</div><h4>Bad channels</h4><p>Robust SD &gt; 4× the recording median → excluded.</p></div>
-    <div class="step"><div class="n">04</div><h4>Segment</h4><p>4 s windows, 2 s step, 2 s edge trim.</p></div>
-    <div class="step"><div class="n">05</div><h4>Reject</h4><p>Windows with masked samples or |x| &gt; 200.</p></div>
-    <div class="step"><div class="n">06</div><h4>Features</h4><p>282 per window: band powers, ratios, entropy, Hjorth.</p></div>
+  <span class="eyebrow">03 · Processing</span>
+  <h2>From raw signal to 282 numbers per window</h2>
+  <div class="pipeline" aria-label="Processing steps">
+    <div class="step"><div class="n">01</div><h4>Mask</h4><p>Flag samples at the ADC limits or flat for ≥ 0.25 s, plus 1 s either side.</p></div>
+    <div class="step"><div class="n">02</div><h4>Filter</h4><p>Subtract the median, 50 Hz notch, 1–45 Hz zero-phase Butterworth band-pass.</p></div>
+    <div class="step"><div class="n">03</div><h4>Bad channels</h4><p>Exclude a channel if its robust SD exceeds 4× the recording median (<span data-bind="proc.badCh">12 of 1344</span>).</p></div>
+    <div class="step"><div class="n">04</div><h4>Windows</h4><p>4 s long, 2 s apart, first and last 2 s skipped: <span data-bind="proc.winPerRec">72</span> per recording.</p></div>
+    <div class="step"><div class="n">05</div><h4>Reject</h4><p>Drop windows with a masked sample or any value beyond ±200.</p></div>
+    <div class="step"><div class="n">06</div><h4>Features</h4><p>Band powers, ratios, spectral entropy, Hjorth parameters and moments per channel.</p></div>
   </div>
   <div class="grid g2">
     <div class="card">
-      <h3>Filter frequency response</h3>
-      <p class="sub">Effective gain of the zero-phase chain (squared magnitude: −6 dB at the cut-offs).</p>
+      <h3>Filter response</h3>
+      <p class="sub">Gain of the full chain. Running the filter forwards and backwards squares the response: −6 dB at the cut-offs, no phase shift.</p>
       <div id="chart-filter" class="chart"></div>
     </div>
     <div class="card">
-      <h3>Group spectrum: rest vs. test</h3>
-      <p class="sub">Mean log<sub>10</sub> PSD over 48 participants (channel average, filtered), shaded 95% CI; bands marked.</p>
+      <h3>Average spectrum, rest vs. test</h3>
+      <p class="sub">Mean log<sub>10</sub> power over 48 participants (filtered, averaged over channels), shaded 95% CI.</p>
       <div id="chart-group-psd" class="chart"></div>
     </div>
     <div class="card">
-      <h3>Band-power change during the task</h3>
-      <p class="sub">Median within-participant log<sub>10</sub>(test / rest) relative power. ● = FDR q &lt; 0.05. Descriptive only — not used to choose features.</p>
+      <h3>Change in relative band power during the test</h3>
+      <p class="sub">Median within-person log<sub>10</sub>(test / rest). Dots mark FDR q &lt; 0.05. Computed on all data, so it was not used to pick features.</p>
       <div id="chart-contrast" class="chart"></div>
     </div>
     <div class="card">
-      <h3>Artifact rejection threshold</h3>
-      <p class="sub">Share of windows rejected per condition as the amplitude threshold varies; 200 was chosen.</p>
+      <h3>Rejection threshold</h3>
+      <p class="sub">Share of windows rejected in each condition as the amplitude limit changes. The pipeline uses ±200.</p>
       <div id="chart-sweep" class="chart"></div>
     </div>
     <div class="card">
@@ -191,27 +168,24 @@
       <p class="small muted" id="feat-desc"></p>
     </div>
     <div class="card">
-      <h3>Who explains the variance?</h3>
-      <p class="sub">Median share of feature variance explained by participant identity vs. condition (η²), per feature group.</p>
+      <h3>Person vs. condition</h3>
+      <p class="sub">Median share of each feature group's variance explained by who the participant is, and by rest vs. test (η²).</p>
       <div id="chart-eta" class="chart"></div>
     </div>
   </div>
 </section>
 
-<!-- ================================================================ ML -->
 <section id="ml" class="wrap reveal">
-  <span class="eyebrow">04 · Machine Learning</span>
-  <h2>Subject-independent classification</h2>
-  <p class="lead">Nested cross-validation grouped by participant: 8 outer folds test on 6 unseen people each; hyper-parameters are tuned on training participants only.
-    Confidence intervals resample participants, not windows.</p>
-
+  <span class="eyebrow">04 · Results</span>
+  <h2>Classifying held-out participants</h2>
+  <p class="lead">Nested cross-validation: 8 outer folds of 6 participants; hyper-parameters chosen inside each training set by a further
+    4-fold split over participants. Confidence intervals resample participants.</p>
   <div class="card" style="margin-top:28px">
     <h3>Model comparison</h3>
-    <p class="sub">Window-level ROC-AUC with 95% participant-bootstrap CI, and recording-level accuracy (window scores averaged per recording).</p>
+    <p class="sub">ROC-AUC on 4 s windows with 95% CI, and accuracy per recording after averaging its window scores.</p>
     <div id="chart-models" class="chart"></div>
     <div class="table-wrap" id="tbl-metrics"><!-- BEGIN:metrics-table --><table aria-label="Model metrics"><thead><tr><th>Model</th><th>Accuracy</th><th>Bal. acc.</th><th>Precision</th><th>Recall</th><th>Specificity</th><th>F1</th><th>ROC-AUC [95% CI]</th><th>Rec. acc.</th><th>Rec. AUC</th></tr></thead><tbody><tr><td>Chance (training prior)</td><td>0.530</td><td>0.500</td><td>0.000</td><td>0.000</td><td>1.000</td><td>0.000</td><td>0.472 <span class="ci">[0.50, 0.50]</span></td><td>0.500</td><td>0.502</td></tr><tr><td>Frontal θ / parietal α index</td><td>0.608</td><td>0.603</td><td>0.596</td><td>0.515</td><td>0.690</td><td>0.553</td><td>0.645 <span class="ci">[0.59, 0.70]</span></td><td>0.656</td><td>0.689</td></tr><tr class="best"><td>Logistic regression</td><td>0.801</td><td>0.800</td><td>0.786</td><td>0.792</td><td>0.809</td><td>0.789</td><td>0.881 <span class="ci">[0.84, 0.92]</span></td><td>0.865</td><td>0.957</td></tr><tr><td>SVM (RBF kernel)</td><td>0.793</td><td>0.793</td><td>0.773</td><td>0.792</td><td>0.794</td><td>0.783</td><td>0.877 <span class="ci">[0.84, 0.91]</span></td><td>0.875</td><td>0.958</td></tr><tr><td>Random forest</td><td>0.802</td><td>0.801</td><td>0.787</td><td>0.794</td><td>0.809</td><td>0.790</td><td>0.877 <span class="ci">[0.84, 0.91]</span></td><td>0.885</td><td>0.951</td></tr><tr><td>Gradient boosting</td><td>0.791</td><td>0.793</td><td>0.752</td><td>0.829</td><td>0.758</td><td>0.789</td><td>0.863 <span class="ci">[0.81, 0.91]</span></td><td>0.865</td><td>0.928</td></tr></tbody><caption>Window columns: 5554 held-out 4 s windows. Recording columns: 96 recordings, window scores averaged. Positive class = multitasking test. CIs resample participants (1000 bootstrap draws).</caption></table><!-- END:metrics-table --></div>
   </div>
-
   <div class="grid g2">
     <div class="card">
       <h3>Confusion matrix</h3>
@@ -225,12 +199,12 @@
       <div id="chart-cm" class="chart short"></div>
     </div>
     <div class="card">
-      <h3>Per-participant performance</h3>
-      <p class="sub">AUC within each held-out participant (each dot is one person).</p>
+      <h3>Per participant</h3>
+      <p class="sub">AUC within each held-out person. One dot per participant.</p>
       <div id="chart-subj" class="chart short"></div>
     </div>
     <div class="card">
-      <h3>Feature importance</h3>
+      <h3>What the models use</h3>
       <div class="controls">
         <label>Model <select id="imp-model" aria-label="Importance model"></select></label>
         <div class="seg" role="group" aria-label="Grouping">
@@ -238,108 +212,160 @@
           <button type="button" data-kind="channel" aria-pressed="false">Channels</button>
         </div>
       </div>
-      <p class="sub">Drop in held-out AUC when a whole group is permuted (mean ± SD over folds).</p>
+      <p class="sub">Drop in held-out AUC when all features of a group or channel are shuffled together (mean ± SD over folds).</p>
       <div id="chart-imp" class="chart tall"></div>
     </div>
     <div class="card">
-      <h3>Is it brain state or artifact?</h3>
-      <p class="sub">Same cross-validation with feature subsets. Artifact-prone inputs: eye-adjacent channels, δ/γ bands, waveform-shape features.</p>
-      <div id="chart-ablation" class="chart tall"></div>
-    </div>
-    <div class="card span2">
-      <h3>Workload predictions for a held-out participant</h3>
+      <h3>Scores over time for one participant</h3>
       <div class="controls">
         <label>Participant <select id="pred-subj" aria-label="Participant"></select></label>
-        <span class="small muted" id="pred-meta"></span>
       </div>
+      <p class="small muted" id="pred-meta"></p>
       <div id="chart-pred" class="chart"></div>
-      <p class="small muted">Each point is one 4 s window, scored by a model trained without this participant. Gaps are windows rejected as artifacts.</p>
+      <p class="small muted">Each point is a 4 s window scored by a model that never saw this person. Gaps are rejected windows.</p>
     </div>
     <div class="card span2">
-      <h3>Personalisation</h3>
-      <p class="sub">All strategies scored on the same late windows (≥ 64 s) of each recording; calibration data come from the first 60 s.</p>
+      <h3>Calibrating to the individual</h3>
+      <p class="sub">Five strategies, all scored on windows from 64 s onward; any calibration data come from the first 60 s of the same recordings.
+        A: no calibration. B1: z-score each person's features. B2: z-score against their first minute of rest. C: train on that person only. D: pooled model plus that person's first minute.</p>
       <div id="chart-pers" class="chart"></div>
-      <div class="callout warn small">Each condition in STEW is a single continuous recording. Within-participant calibration can succeed partly by recognising
-        <em>the recording</em> (electrode contact, drift) rather than the cognitive state — those numbers are an upper bound.</div>
     </div>
   </div>
 </section>
 
-<!-- ================================================================ INSIGHTS -->
-<section id="insights" class="wrap reveal">
-  <span class="eyebrow">05 · Research Insights</span>
-  <h2>What the experiments show</h2>
-  <div class="grid g2" id="insights-grid"><!-- BEGIN:insights --><!-- END:insights --></div>
+<section id="artifacts" class="wrap reveal">
+  <span class="eyebrow">05 · Artifacts</span>
+  <h2>Brain activity, or eyes and muscles?</h2>
+  <div class="prose">
+    <p>During the test people look around the screen, blink at a different rate and tense their forehead and jaw. These produce electrical signals
+      much larger than brain activity, and the electrodes nearest the eyes are among the ones the model relies on most. Each row below retrains the
+      same logistic regression, with the same participant folds and the same windows, after removing one possible source.</p>
+  </div>
+  <div class="card" style="margin-top:22px">
+    <div id="chart-confounds" class="chart tall"></div>
+    <div class="table-wrap"><!-- BEGIN:confounds --><table aria-label="Artifact analyses"><thead><tr><th>Analysis</th><th>Features</th><th>Window AUC [95% CI]</th><th>Δ AUC vs. reference [95% CI]</th><th>Rec. acc.</th><th>Median AUC per person*</th></tr></thead><tbody><tr><td class="section-head" colspan="6">Reference</td></tr><tr><td>All 282 features (notebook 04)</td><td>282</td><td>0.881 <span class="ci">[0.838, 0.918]</span></td><td>—</td><td>0.865</td><td>0.952</td></tr><tr><td class="section-head" colspan="6">a · Channel subsets</td></tr><tr><td>Posterior only (O1, O2, P7, P8)</td><td>80</td><td>0.817 <span class="ci">[0.771, 0.856]</span></td><td>-0.064 <span class="ci">[-0.091, -0.037]</span></td><td>0.854</td><td>0.880</td></tr><tr><td>Temporal only (T7, T8)</td><td>40</td><td>0.725 <span class="ci">[0.668, 0.780]</span></td><td>-0.155 <span class="ci">[-0.216, -0.096]</span></td><td>0.740</td><td>0.808</td></tr><tr><td>Without AF3, AF4, F7, F8</td><td>201</td><td>0.824 <span class="ci">[0.763, 0.876]</span></td><td>-0.057 <span class="ci">[-0.090, -0.024]</span></td><td>0.823</td><td>0.938</td></tr><tr><td class="section-head" colspan="6">b · Frequency bands removed (re-filtered)</td></tr><tr><td>Without δ (4–45 Hz)</td><td>254</td><td>0.842 <span class="ci">[0.794, 0.886]</span></td><td>-0.039 <span class="ci">[-0.065, -0.014]</span></td><td>0.854</td><td>0.946</td></tr><tr><td>Without γ (1–30 Hz)</td><td>254</td><td>0.880 <span class="ci">[0.837, 0.917]</span></td><td>0.000 <span class="ci">[-0.010, +0.010]</span></td><td>0.885</td><td>0.944</td></tr><tr><td>Without δ and γ (4–30 Hz)</td><td>226</td><td>0.854 <span class="ci">[0.808, 0.898]</span></td><td>-0.027 <span class="ci">[-0.047, -0.004]</span></td><td>0.865</td><td>0.938</td></tr><tr><td class="section-head" colspan="6">c · Eye components removed with ICA</td></tr><tr><td>ICA, eye components removed</td><td>282</td><td>0.827 <span class="ci">[0.785, 0.870]</span></td><td>-0.054 <span class="ci">[-0.096, -0.010]</span></td><td>0.823</td><td>0.916</td></tr><tr><td>ICA + without γ (1–30 Hz)</td><td>254</td><td>0.808 <span class="ci">[0.754, 0.859]</span></td><td>-0.073 <span class="ci">[-0.119, -0.028]</span></td><td>0.760</td><td>0.921</td></tr><tr><td class="section-head" colspan="6">d · Artifact markers only</td></tr><tr><td>Artifact markers only (6)</td><td>6</td><td>0.765 <span class="ci">[0.715, 0.821]</span></td><td>-0.116 <span class="ci">[-0.172, -0.056]</span></td><td>0.740</td><td>0.849</td></tr><tr><td>Broad artifact proxies (δ, γ, shape; 98)</td><td>98</td><td>0.787 <span class="ci">[0.730, 0.836]</span></td><td>-0.094 <span class="ci">[-0.125, -0.069]</span></td><td>0.760</td><td>0.886</td></tr><tr><td class="section-head" colspan="6">e · First half → second half</td></tr><tr><td>e1 Train first half → test second half (across participants)</td><td>282</td><td>0.872 <span class="ci">[0.820, 0.916]</span></td><td>-0.002 <span class="ci">[-0.014, +0.010]</span></td><td>0.874</td><td>0.967</td></tr><tr><td>e2 Same, within each participant</td><td>282</td><td>0.985 <span class="ci">[0.973, 0.994]</span></td><td>+0.112 <span class="ci">[+0.070, +0.168]</span></td><td>0.979</td><td>1.000</td></tr><tr><td>e3 Drift control: early vs late in one recording</td><td>282</td><td>—</td><td>—</td><td>—</td><td>0.629</td></tr></tbody></table><p class="table-note">Logistic regression, nested participant-grouped CV, same windows and outer folds as the main model unless noted. CIs: participant bootstrap, 1000 draws; Δ CIs are paired. A dash means the quantity does not apply to that design. *For e3, median AUC per recording.</p><ul class="table-note"><li><strong>e1</strong>: reference = main model on the same second-half windows</li><li><strong>e2</strong>: 47 participants; per-participant models, C=0.01</li><li><strong>e3</strong>: median per-recording AUC over 86 recordings, 95% CI of the median 0.582–0.679</li></ul><!-- END:confounds --></div>
+  </div>
+  <div class="prose" id="confound-reading"><!-- BEGIN:confound-reading --><p>Removing eye-related signal in any of four ways (posterior channels only, no eye-adjacent channels, ICA, ICA without γ) lowers the AUC by 0.054–0.073. The most conservative of these, ICA-cleaned data with γ removed, still reaches 0.808 (95% CI 0.75–0.86), against 0.881 for the full model. Six artifact markers on their own reach 0.765.</p><p>So eye activity accounts for part of the full model's accuracy, and the corrected models keep most of it. That remainder is not proven to be brain activity: ICA removes only what matches the frontal eye proxies, and STEW has no EOG channel to check against.</p><p>ICA removed on average 1.56 components from rest recordings and 1.58 from test recordings, so the correction was not biased towards one condition. It lowered 1–4 Hz power at AF3 by a median 5.5 dB (rest) and 1.2 dB (test), and at O1 by 0.12 dB.</p><!-- END:confound-reading --></div>
 </section>
 
-<!-- ================================================================ DOCS -->
+<section id="insights" class="wrap reveal">
+  <span class="eyebrow">06 · Findings</span>
+  <h2>What came out</h2>
+  <div class="grid g2" id="insights-grid"><!-- BEGIN:insights --><article class="card finding"><h3>282 features beat a single classic index by a wide margin</h3><p>The frontal-θ / parietal-α ratio, a standard EEG workload index, reaches a window AUC of <span class="num">0.645</span> on held-out people and classifies 65.6% of recordings correctly. Logistic regression on all features reaches <span class="num">0.881</span> and 86.5%.</p></article><article class="card finding"><h3>Four different models, the same result</h3><p>Logistic regression, SVM, random forest and gradient boosting land between <span class="num">0.863</span> and <span class="num">0.881</span> AUC. Paired per-participant tests against logistic regression give Holm-corrected p = 1.00 (SVM (RBF kernel)); p = 1.00 (Random forest); p = 1.00 (Gradient boosting). Extra model flexibility buys nothing here. What limits accuracy is how different people are: the participant explains a median 37% of a feature's variance, rest vs. test 0.8%.</p></article><article class="card finding"><h3>The model leans on electrodes near the right eye and temple</h3><p>Shuffling one channel's features at a time, the largest AUC drops are for F8, right frontal, beside the eye (0.165); T8, right temple (0.047); O2, right occipital (0.039). By feature type, relative θ power matters most (AUC drop 0.084). Section 05 tests how much of this is eye and muscle activity.</p></article><article class="card finding"><h3>Eye movements explain part of the result, not all of it</h3><p>Six artifact markers alone reach <span class="num">0.765</span> (95% CI 0.71–0.82). The horizontal eye-movement proxy (F7 − F8, 1–4 Hz) is the strongest single one, with AUC 0.74; blink rate does not differ between conditions (median 3.8 vs 4.4 per minute, p = 0.51). Removing eye components with ICA gives <span class="num">0.827</span> (95% CI 0.79–0.87), and using only the four posterior channels gives <span class="num">0.817</span> (95% CI 0.77–0.86): 0.054–0.064 below the full model, but far from chance. Removing γ, where jaw and forehead muscle dominate, changes nothing (Δ 0.000, 95% CI -0.010 to +0.010).</p></article><article class="card finding"><h3>Self-rated workload was not predictable</h3><p>Among people doing the same test, ridge regression on their EEG predicted their 1–9 rating no better than predicting the average: R² = -0.05 (mean-only baseline -0.05), MAE 1.25, n = 45. The classifier's score was also unrelated to the rating (Spearman ρ = 0.17, p = 0.28). The EEG separates the two situations; it gives no evidence of tracking how hard the task felt to each person. With 45 people this is a weak test, not proof that no relation exists.</p></article><article class="card finding"><h3>Within-person accuracy is near ceiling, but partly for the wrong reason</h3><p>Trained on the first half of a person's own recordings and tested on the second half, the model reaches <span class="num">0.985</span>. But a model asked to tell early from late windows <em>within one recording</em>, where the task does not change, also succeeds (median AUC 0.63 over 86 recordings; 20 of them ≥ 0.8), so recordings drift enough to be partly identifiable. Across people, training on first halves and testing on second halves leaves AUC unchanged (0.872 vs 0.874). Simple per-person normalisation did not help either: median per-person AUC 0.97 without it, 0.93 with a z-score, 0.97 with a resting baseline.</p></article><!-- END:insights --></div>
+</section>
+
+<section id="limitations" class="wrap reveal">
+  <span class="eyebrow">07 · Limitations</span>
+  <h2>What these results do not show</h2>
+  <ul class="clean limitations">
+    <li><strong>Rest is not a low-workload task.</strong> The two recordings differ in visual input, eye movement, posture and motor activity as well as
+      mental effort, so the classifier separates "resting" from "doing this task". A dataset with graded task difficulty would be needed to estimate workload level.</li>
+    <li><strong>Eye and muscle signals are not fully separable from brain signals here.</strong> STEW has no EOG or EMG channels. The artifact checks above
+      remove what can be identified from the EEG itself; they cannot prove the remainder is neural.</li>
+    <li><strong>One session, one recording per condition.</strong> Each condition is a single continuous 2.5-minute recording made on one day. Models
+      calibrated on part of a recording and tested on the rest can recognise the recording itself (electrode contact, headset position, drift),
+      so within-person results are an upper bound. Nothing here tests stability across days.</li>
+    <li><strong>Small effective sample.</strong> Windows from the same recording are correlated; the independent unit is the participant (n = 48),
+      which is why confidence intervals resample participants.</li>
+    <li><strong>Unknown units and reference.</strong> The dataset documentation gives neither, so amplitude thresholds assume µV-like units.</li>
+    <li><strong>Offline processing.</strong> Zero-phase filtering, whole-recording bad-channel detection and per-recording ICA need the full recording.
+      A live system would need causal equivalents.</li>
+  </ul>
+</section>
+
 <section id="docs" class="wrap reveal">
-  <span class="eyebrow">06 · Technical Documentation</span>
-  <h2>Methods & mathematics</h2>
-  <p class="lead">The complete code, notebooks and tests are in the repository. The key operations, in brief:</p>
+  <span class="eyebrow">08 · Methods</span>
+  <h2>Methods</h2>
+  <p class="lead">Code, notebooks and tests are in the repository; each notebook writes the result files this page reads.</p>
 
   <details open>
-    <summary>Zero-phase Butterworth filtering</summary>
+    <summary>Filtering</summary>
     <div>
-      <p>A Butterworth filter of order \(n\) has maximally flat pass-band magnitude \(|H(f)|^2 = 1/\big(1+(f/f_c)^{2n}\big)\). Running it forward and then
-        backward (<code>sosfiltfilt</code>) gives the overall response \(H(f)\,H^*(f)=|H(f)|^2\): real-valued, hence <strong>zero phase</strong> (no time shift),
-        with doubled roll-off. Second-order sections keep the 1 Hz high-pass (1/64 of Nyquist) numerically stable. A notch at 50 Hz (\(Q=30\), bandwidth ≈ 1.7 Hz)
-        places zeros on the unit circle at \(e^{\pm j2\pi f_0/f_s}\).</p>
+      <p>A Butterworth filter of order \(n\) has a flat pass-band, \(|H(f)|^2 = 1/\big(1+(f/f_c)^{2n}\big)\). Running it forwards and then backwards
+        (<code>sosfiltfilt</code>) gives \(H(f)\,H^*(f)=|H(f)|^2\): real-valued, so there is no phase shift, and the roll-off doubles.
+        Second-order sections keep the 1 Hz high-pass (1/64 of Nyquist) numerically stable. The 50 Hz notch (\(Q=30\), about 1.7 Hz wide) places zeros
+        on the unit circle at \(e^{\pm j2\pi f_0/f_s}\).</p>
     </div>
   </details>
   <details>
-    <summary>Robust artifact statistics</summary>
+    <summary>Artifact statistics</summary>
     <div>
-      <p>Amplitude outliers are measured with the median absolute deviation, \(\hat\sigma = 1.4826\cdot\mathrm{median}|x-\mathrm{median}(x)|\), which, unlike the
-        standard deviation, is not inflated by the artifacts it is meant to detect. Windows are rejected if any good channel exceeds ±200 (≈ µV) after filtering,
-        or overlaps a saturated / flat-lined segment.</p>
+      <p>Outliers are measured with the median absolute deviation, \(\hat\sigma = 1.4826\cdot\mathrm{median}|x-\mathrm{median}(x)|\), which, unlike
+        the standard deviation, is not inflated by the outliers themselves. A window is dropped if any good channel exceeds ±200 after filtering or the
+        window overlaps a saturated or flat segment.</p>
     </div>
   </details>
   <details>
-    <summary>Welch power spectral density & band power</summary>
+    <summary>Spectral features</summary>
     <div>
       <p>Each 4 s window is split into \(K=5\) Hann-tapered 2 s segments with 75% overlap:
         \[\hat P(f)=\frac{1}{K}\sum_{k=1}^{K}\frac{1}{f_s\sum_n w[n]^2}\Big|\sum_{n}w[n]\,x_k[n]\,e^{-j2\pi fn/f_s}\Big|^2\]
-        Averaging reduces the variance of the periodogram (whose standard deviation equals its mean) roughly by \(K\). Band power is
-        \(P_b=\sum_{f\in[f_1,f_2)}\hat P(f)\,\Delta f\) with \(\Delta f = 0.5\) Hz; by Parseval the total equals the signal variance. Relative power is \(P_b/P_{1\text{–}45}\).</p>
-      <p>Bands: δ 1–4, θ 4–8, α 8–13, β 13–30, γ 30–45 Hz. The upper limit follows the headset's on-board roll-off; individual alpha peaks of the participants ranged 7.5–12.5 Hz.</p>
+        Averaging \(K\) segments cuts the periodogram's variance roughly \(K\)-fold. Band power is \(P_b=\sum_{f\in[f_1,f_2)}\hat P(f)\,\Delta f\)
+        with \(\Delta f = 0.5\) Hz; relative power is \(P_b/P_{1\text{–}45}\). Bands: δ 1–4, θ 4–8, α 8–13, β 13–30, γ 30–45 Hz.
+        Individual alpha peaks at rest ranged <span data-bind="methods.iaf">7.5–12.5 Hz in the 38 participants where one was detectable</span>.</p>
+      <p>Spectral entropy is \(H=-\sum_k p_k\log p_k/\log N\) with \(p_k=\hat P(f_k)/\sum_j \hat P(f_j)\). Ratios (log<sub>10</sub>): θ/α, θ/β,
+        β/(α+θ) (Pope et al., 1995), and frontal θ over parietal α. Hjorth mobility is \(\sqrt{\mathrm{var}(x')/\mathrm{var}(x)}\);
+        complexity is mobility(\(x'\)) / mobility(\(x\)).</p>
     </div>
   </details>
   <details>
-    <summary>Spectral entropy, ratios, Hjorth parameters</summary>
+    <summary>Models and validation</summary>
     <div>
-      <p><strong>Spectral entropy</strong>: \(H=-\sum_k p_k\log p_k/\log N\) with \(p_k=\hat P(f_k)/\sum_j \hat P(f_j)\) — 0 for a pure tone, 1 for white noise.</p>
-      <p><strong>Ratios</strong> (log<sub>10</sub>): θ/α, θ/β, engagement index β/(α+θ) (Pope et al., 1995), and frontal θ / parietal α (task-load index).</p>
-      <p><strong>Hjorth</strong>: activity \(\mathrm{var}(x)\); mobility \(\sqrt{\mathrm{var}(x')/\mathrm{var}(x)}\) (≈ mean frequency); complexity = mobility(\(x'\)) / mobility(\(x\)).</p>
+      <p>Logistic regression with an L2 penalty, \(P(y=1\mid x)=\sigma(w^\top x+b)\), minimising log-loss \(+\tfrac{1}{2C}\lVert w\rVert^2\);
+        an RBF-kernel SVM; a 400-tree random forest; histogram gradient boosting. Outer <code>GroupKFold(8)</code> over participants, inner
+        <code>GroupKFold(4)</code> over the training participants to choose hyper-parameters. Median imputation of excluded channels and
+        standardisation are fitted inside each training fold. Random seed 0 throughout (folds, forests, boosting, bootstrap, ICA).</p>
+      <p>ROC-AUC is the probability that a randomly chosen test-condition window scores higher than a randomly chosen rest window.</p>
     </div>
   </details>
   <details>
-    <summary>Models & validation</summary>
+    <summary>Ocular correction (ICA)</summary>
     <div>
-      <p><strong>Logistic regression</strong>: \(P(y=1\mid x)=\sigma(w^\top x+b)\), minimising log-loss \(+\tfrac{1}{2C}\lVert w\rVert^2\).
-        <strong>SVM</strong>: maximum-margin classifier with RBF kernel \(k(x,x')=e^{-\gamma\lVert x-x'\rVert^2}\).
-        <strong>Random forest</strong>: bagged, feature-subsampled trees. <strong>Gradient boosting</strong>: trees fitted sequentially to the negative gradient of the log-loss.</p>
-      <p>Outer <code>GroupKFold(8)</code> over participants; inner <code>GroupKFold(4)</code> over training participants for hyper-parameters; imputation and standardisation
-        fitted inside each training fold. AUC is threshold-free: the probability that a random test window scores above a random rest window.</p>
+      <p>Per recording, FastICA with one component per good channel is fitted on the filtered signal. Two eye proxies are built from the EEG:
+        VEOG = mean(AF3, AF4) and HEOG = F7 − F8, both low-passed at 4 Hz. For each proxy the best-matching component is removed if its low-passed time
+        course correlates with the proxy at |r| ≥ 0.7, so at most two components per recording. Because the proxies are frontal EEG, a removed component
+        can also contain frontal brain activity.</p>
     </div>
   </details>
   <details>
-    <summary>Dataset reference & reproduction</summary>
+    <summary>Data and reproduction</summary>
     <div>
       <p>W. L. Lim, O. Sourina, L. Wang, “STEW: Simultaneous Task EEG Workload Data Set,” <em>IEEE Trans. Neural Systems and Rehabilitation Engineering</em>, 26(11), 2106–2114, 2018.
-        <a href="https://doi.org/10.1109/TNSRE.2018.2872924" target="_blank" rel="noopener">doi:10.1109/TNSRE.2018.2872924</a> ·
+        <a href="https://doi.org/10.1109/TNSRE.2018.2872924" target="_blank" rel="noopener">doi:10.1109/TNSRE.2018.2872924</a>.
         Dataset: IEEE DataPort, <a href="https://doi.org/10.21227/44r8-ya50" target="_blank" rel="noopener">doi:10.21227/44r8-ya50</a> (CC BY 4.0).</p>
-      <p>Reproduce: download STEW into <code>data/raw/STEW/</code>, run notebooks 01–06 in order, then <code>python src/export_results.py</code> to regenerate the JSON this page reads.
-        Source: <a href="https://github.com/RadiantVixen/NeuroSense" target="_blank" rel="noopener">github.com/RadiantVixen/NeuroSense</a>.</p>
+      <p>To reproduce: put STEW in <code>data/raw/STEW/</code>, run notebooks 01–07 in order, then <code>python src/export_results.py</code>.
+        Exact package versions are in <code>requirements.txt</code>.</p>
     </div>
   </details>
+</section>
+
+<section id="author" class="wrap reveal">
+  <span class="eyebrow">09 · Author</span>
+  <h2>About this project</h2>
+  <div class="grid g2">
+    <div class="card">
+      <dl class="kv">
+        <dt>Author</dt><dd>TODO: name or handle</dd>
+        <dt>Contact</dt><dd>TODO: email or profile link</dd>
+        <dt>Context</dt><dd>TODO: course / thesis / personal project</dd>
+        <dt>Date</dt><dd>TODO</dd>
+        <dt>Code</dt><dd><a href="https://github.com/RadiantVixen/NeuroSense" target="_blank" rel="noopener">github.com/RadiantVixen/NeuroSense</a></dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h3>How to cite</h3>
+      <p class="muted small">TODO: Author (TODO: year). <em>NeuroSense: classifying rest vs. multitasking from EEG in unseen participants.</em>
+        https://github.com/RadiantVixen/NeuroSense. Citation metadata: <code>CITATION.cff</code> in the repository.</p>
+      <p class="muted small">Please also cite the STEW dataset and paper (see Methods → Data).</p>
+    </div>
+  </div>
 </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <span>NeuroSense · offline EEG research prototype. Not a medical device; no live data is acquired.</span>
-    <span>Data: STEW (CC BY 4.0) · Charts: Plotly.js</span>
+    <span>NeuroSense. Not a medical device.</span>
+    <span>Data: STEW (CC BY 4.0). Charts: Plotly.js.</span>
   </div>
 </footer>
 </body>
