@@ -61,12 +61,12 @@ def band_power(f: np.ndarray, p: np.ndarray, lo: float, hi: float) -> np.ndarray
     return p[:, m].sum(axis=1) * (f[1] - f[0])
 
 
-def spectral_entropy(f: np.ndarray, p: np.ndarray) -> np.ndarray:
+def spectral_entropy(f: np.ndarray, p: np.ndarray, total_band: tuple[float, float] = TOTAL_BAND) -> np.ndarray:
     """H = -sum p_k log p_k / log N over the 1-45 Hz bins, with p_k the PSD normalised to sum 1.
 
     0 = all power in one bin (pure tone); 1 = flat (white) spectrum.
     """
-    m = (f >= TOTAL_BAND[0]) & (f < TOTAL_BAND[1])
+    m = (f >= total_band[0]) & (f < total_band[1])
     q = p[:, m]
     q = q / q.sum(axis=1, keepdims=True)
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -91,24 +91,30 @@ def time_features(W: np.ndarray) -> dict[str, np.ndarray]:
     }
 
 
-def spectral_features(f: np.ndarray, p: np.ndarray) -> dict[str, np.ndarray]:
-    bp = {b: band_power(f, p, lo, hi) for b, (lo, hi) in BANDS.items()}
-    total = band_power(f, p, *TOTAL_BAND)
+def spectral_features(f: np.ndarray, p: np.ndarray, bands: dict = BANDS,
+                      total_band: tuple[float, float] = TOTAL_BAND) -> dict[str, np.ndarray]:
+    bp = {b: band_power(f, p, lo, hi) for b, (lo, hi) in bands.items()}
+    total = band_power(f, p, *total_band)
     out = {f"abs_{b}": np.log10(v) for b, v in bp.items()}
     out |= {f"rel_{b}": v / total for b, v in bp.items()}
-    out["spec_ent"] = spectral_entropy(f, p)
+    out["spec_ent"] = spectral_entropy(f, p, total_band)
     out["r_theta_alpha"] = np.log10(bp["theta"] / bp["alpha"])
     out["r_theta_beta"] = np.log10(bp["theta"] / bp["beta"])
     out["r_engagement"] = np.log10(bp["beta"] / (bp["alpha"] + bp["theta"]))  # Pope et al. 1995
     return out
 
 
-def extract(W: np.ndarray) -> pd.DataFrame:
-    """Feature table (n_windows x n_features) with columns ``<channel>_<feature>`` + regional features."""
+def extract(W: np.ndarray, bands: dict = BANDS, total_band: tuple[float, float] = TOTAL_BAND) -> pd.DataFrame:
+    """Feature table (n_windows x n_features) with columns ``<channel>_<feature>`` + regional features.
+
+    ``bands``/``total_band`` restrict the spectral features (used by the band-ablation analyses,
+    together with a signal filtered to the same range so time-domain features match).
+    The theta, alpha and beta bands must be present.
+    """
     with np.errstate(invalid="ignore", divide="ignore"):
         feats = time_features(W)
         f, p = window_psd(W)
-        feats |= spectral_features(f, p)
+        feats |= spectral_features(f, p, bands, total_band)
         cols = {f"{ch}_{name}": v[:, i] for name, v in feats.items() for i, ch in enumerate(CHANNELS)}
         idx = lambda chs: [CHANNELS.index(c) for c in chs]
         theta = band_power(f, p, *BANDS["theta"])

@@ -79,10 +79,19 @@ def outer_cv(n_splits: int = 8) -> GroupKFold:
 
 
 def nested_cv(spec: ModelSpec, X: pd.DataFrame, y: np.ndarray, groups: np.ndarray,
-              outer_splits: int = 8, inner_splits: int = 4, n_jobs: int = 8) -> pd.DataFrame:
-    """Out-of-fold scores for every window, from subject-independent nested CV."""
+              outer_splits: int = 8, inner_splits: int = 4, n_jobs: int = 8,
+              train_mask: np.ndarray | None = None, test_mask: np.ndarray | None = None) -> pd.DataFrame:
+    """Out-of-fold scores from subject-independent nested CV.
+
+    The outer split is always computed on all rows (so folds are identical across analyses);
+    ``train_mask`` / ``test_mask`` optionally restrict which rows of each side are used.
+    """
     rows = []
     for fold, (tr, te) in enumerate(outer_cv(outer_splits).split(X, y, groups)):
+        if train_mask is not None:
+            tr = tr[train_mask[tr]]
+        if test_mask is not None:
+            te = te[test_mask[te]]
         est = clone(spec.estimator)
         if spec.grid:
             search = GridSearchCV(est, spec.grid, cv=GroupKFold(n_splits=inner_splits), scoring="roc_auc",
