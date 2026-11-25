@@ -1,151 +1,128 @@
-# NeuroSense — EEG-Based Cognitive Workload Estimation
+# NeuroSense
 
-NeuroSense is a reproducible research pipeline that detects **task-induced cognitive workload** from 14-channel EEG
-(STEW dataset) and evaluates it strictly on **participants the model has never seen**. Results are published as a static
-GitHub Pages site (`website/`) built with HTML, CSS, vanilla JavaScript and Plotly.js.
+Classifying resting EEG versus EEG recorded during a multitasking test, in people the classifier was not trained on.
+Data: STEW (48 participants, Emotiv EPOC, 14 channels, 128 Hz). Site: https://radiantvixen.github.io/NeuroSense/
 
-> Offline research prototype on a recorded dataset. Nothing here acquires live EEG, and it is not a medical device.
+The classifier distinguishes rest from an active multitasking task. It does not estimate how much workload a person
+experiences: predicting self-rated workload from EEG failed (R² = −0.05, n = 45).
 
-## Headline results (subject-independent, nested cross-validation)
+## Results
 
-| Model | Window ROC-AUC [95% CI] | Window bal. acc. | Recording acc. | Recording AUC |
-|---|---|---|---|---|
-| Chance (training prior) | 0.47* | 0.500 | 0.500 | 0.50 |
-| Classic frontal-θ / parietal-α index (1 feature) | 0.645 [0.59, 0.70] | 0.603 | 0.656 | 0.689 |
-| **Logistic regression (L2)** | **0.881** [0.84, 0.92] | 0.800 | 0.865 | 0.957 |
-| SVM (RBF) | 0.877 [0.84, 0.91] | 0.793 | 0.875 | 0.958 |
-| Random forest | 0.877 [0.84, 0.91] | 0.801 | 0.885 | 0.951 |
-| Gradient boosting | 0.863 [0.81, 0.91] | 0.793 | 0.865 | 0.928 |
+All numbers below come from `results/` and `website/data/metrics.json`. Evaluation is nested cross-validation grouped by
+participant: 8 outer folds of 6 people, hyper-parameters chosen inside each training set. Window = 4 s; recording accuracy
+averages the window scores of each 2.5-minute recording. CIs resample participants (1000 draws).
 
-Windows = 5 554 artifact-free 4 s windows; recordings = 96 (window scores averaged). The CIs come from resampling participants.
-\* The prior is constant within each fold but differs slightly between folds.
+| Model | Window ROC-AUC [95% CI] | Balanced acc. | Recording acc. |
+|---|---|---|---|
+| Frontal θ / parietal α index (1 feature) | 0.645 [0.59, 0.70] | 0.603 | 0.656 |
+| Logistic regression (L2) | 0.881 [0.84, 0.92] | 0.800 | 0.865 |
+| SVM (RBF) | 0.877 [0.84, 0.91] | 0.793 | 0.875 |
+| Random forest | 0.877 [0.84, 0.91] | 0.801 | 0.885 |
+| Gradient boosting | 0.863 [0.81, 0.91] | 0.793 | 0.865 |
 
-Key findings:
+The four learned models do not differ (Holm-corrected p = 1.0 against logistic regression). A within-participant label
+permutation test gives p = 0.01 (100 permutations).
 
-- **The rest vs. multitasking state is detectable in unseen people.** A within-participant label-permutation test gives p = 0.01 (null AUC ≈ 0.49).
-  The four learned models are statistically indistinguishable, so a regularised linear model is enough.
-- **Between-person variability is the main limit.** Participant identity explains a median 37% of feature variance; rest-vs-test explains 0.8%.
-  Within each held-out person the median AUC is ~0.95, but each person's scores are shifted by an individual offset.
-- **Artifacts are a confound that cannot be ruled out.** Test recordings are noisier (24.5% vs 14.8% of windows rejected), and the largest model weights sit on F8, next to the right eye.
-  Artifact-proxy features alone reach AUC 0.81, about the same as posterior θ/α/β power alone (0.81). Neural and ocular/muscle information are redundant here.
-- **Self-rated workload is not predicted.** Among people doing the same task, EEG did not predict their 1–9 ratings (ridge R² = −0.05, n = 45).
-- **Personalisation:** simple baseline normalisation brought no reliable gain. Within-participant calibration looks near-perfect (AUC ≈ 0.99),
-  but that is an upper bound. STEW has a single continuous recording per condition, so such a model can recognise the recording rather than the mental state.
+### Artifact checks (notebook 07)
 
-## Dataset
+Logistic regression, same windows and folds; reference AUC 0.881.
 
-**STEW: Simultaneous Task EEG Workload**
-- 48 participants, recorded with an Emotiv EPOC (14 channels: AF3, F7, F3, FC5, T7, P7, O1, O2, P8, T8, FC6, F4, F8, AF4).
-- Sampled at 128 Hz, 2.5 min per recording.
+| Analysis | Window AUC [95% CI] | Δ vs. reference [95% CI] |
+|---|---|---|
+| Posterior channels only (O1, O2, P7, P8) | 0.817 [0.771, 0.856] | −0.064 [−0.091, −0.037] |
+| Temporal channels only (T7, T8) | 0.725 [0.669, 0.780] | −0.156 [−0.216, −0.096] |
+| Without AF3, AF4, F7, F8 | 0.824 [0.763, 0.876] | −0.057 [−0.090, −0.024] |
+| Without δ (re-filtered 4–45 Hz) | 0.842 [0.794, 0.886] | −0.039 [−0.065, −0.014] |
+| Without γ (re-filtered 1–30 Hz) | 0.880 [0.837, 0.917] | 0.000 [−0.010, +0.010] |
+| ICA, eye components removed | 0.827 [0.785, 0.870] | −0.054 [−0.096, −0.010] |
+| ICA and without γ | 0.808 [0.754, 0.859] | −0.073 [−0.119, −0.027] |
+| Six artifact markers only | 0.765 [0.715, 0.821] | −0.116 [−0.172, −0.056] |
+| First half → second half, across participants | 0.872 [0.820, 0.916] | −0.002 [−0.014, +0.010] |
+| First half → second half, within each participant | 0.985 [0.973, 0.994] | — |
+| Early vs. late within one recording (drift control) | median 0.629 per recording | — |
 
-| File | Content (verified against the official documentation) |
-|---|---|
-| `subXX_lo.txt` | resting-state recording, 19 200 × 14 |
-| `subXX_hi.txt` | recording during the SIMKAP multitasking test, 19 200 × 14 |
-| `ratings.txt` | `subject, rating at rest, rating for test` on a 1–9 scale (subjects 5, 24, 42 unavailable) |
-
-Note that `lo` means **rest**, not a low-difficulty task. The task studied is therefore rest vs. task-induced workload.
-
-The raw data is not included. Download it from IEEE DataPort and place the files at `data/raw/STEW/sub01_hi.txt`, …, `data/raw/STEW/ratings.txt`.
-
-**Citation**
-- W. L. Lim, O. Sourina, L. Wang, "STEW: Simultaneous Task EEG Workload Data Set," *IEEE Transactions on Neural Systems and
-  Rehabilitation Engineering*, 26(11), 2106–2114, 2018. doi:[10.1109/TNSRE.2018.2872924](https://doi.org/10.1109/TNSRE.2018.2872924)
-- STEW dataset, IEEE DataPort, 2018. doi:[10.21227/44r8-ya50](https://doi.org/10.21227/44r8-ya50). Licensed CC BY 4.0.
-
-## Installation and reproduction
-
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-pytest tests                                   # 34 tests; dataset-structure tests skip without the raw data
-
-# run the stages in order (each notebook writes its outputs to results/ and data/)
-for nb in notebooks/0*.ipynb; do jupyter nbconvert --to notebook --execute --inplace "$nb"; done
-
-python src/export_results.py                   # writes results/*.json and website/data/*.json
-cd website && python -m http.server 8000       # open http://localhost:8000
-```
-
-Runtime on a 20-core machine is about 15 minutes in total. Most of it is nested CV (notebook 04) and the permutation test and importance (notebook 05).
-
-## Project structure
-
-```
-data/raw/STEW/           raw dataset (git-ignored)
-data/processed/          window table and bad-channel list (signals are recomputed on the fly; ~5 s)
-data/features/           window × feature table (git-ignored, regenerated by notebook 03)
-notebooks/
-  01_dataset_exploration.ipynb   structure verification, ratings, amplitude, quality, spectra
-  02_signal_processing.ipynb     filter design, masking, bad channels, rejection threshold, referencing
-  03_feature_extraction.ipynb    band justification, Welch PSD, 282 features, variance decomposition
-  04_model_training.ipynb        task definition, baselines, nested subject-wise CV, rating regression
-  05_model_evaluation.ipynb      metrics + CIs, confusion/ROC, per-subject tests, permutation, importance, confound ablations
-  06_personalization.ipynb       subject-independent vs normalised vs calibrated models
-src/
-  data_loader.py         loading + documented dataset constants
-  quality.py             descriptive signal-quality metrics
-  preprocessing.py       masking, filtering, bad channels, re-referencing, segmentation, rejection
-  feature_extraction.py  time-domain, spectral, ratio and regional features
-  modeling.py            model specs, nested GroupKFold CV
-  evaluation.py          window / recording / subject metrics, subject bootstrap
-  personalization.py     calibration/evaluation split, subject and baseline normalisation
-  export_results.py      results -> JSON for the website
-tests/                   pytest suite (synthetic-signal checks + dataset-structure checks)
-results/                 per-stage CSV/JSON summaries, figures, and metrics/predictions/visualizations.json
-website/                 static site: index.html, styles.css, script.js, data/*.json
-```
-
-## Methodology
-
-1. **Exploration.** Verified file structure, labels and ratings. Characterised the DC offset (~4 300), drift, ADC rails, flat runs and line noise
-   (50 Hz in 32/96 recordings). Showed that spectral content above ~42 Hz is removed by the headset.
-2. **Preprocessing.** All steps are label-blind and run per recording:
-   - mask saturated or flat samples (±1 s);
-   - remove the median offset;
-   - apply a 50 Hz notch;
-   - apply a zero-phase 4th-order Butterworth 1–45 Hz band-pass (`sosfiltfilt`);
-   - mark a channel as bad when its robust SD exceeds 4× the recording median;
-   - cut 4 s windows with a 2 s step;
-   - reject windows with masked samples or |x| > 200.
-
-   The original reference is kept, because common-average referencing spreads frontal ocular activity to posterior channels.
-3. **Features.** For each 4 s window:
-   - Welch PSD with 2 s Hann segments and 75% overlap (0.5 Hz bins);
-   - absolute (log) and relative power in δ 1–4, θ 4–8, α 8–13, β 13–30 and γ 30–45 Hz;
-   - spectral entropy;
-   - θ/α, θ/β and β/(α+θ) ratios;
-   - Hjorth parameters, moments and line length;
-   - frontal-θ/parietal-α and frontal alpha asymmetry.
-
-   That gives 282 features in total. Individual alpha peaks (7.5–12.5 Hz) support the fixed α band.
-4. **Modelling.** Binary rest vs. test. Validation uses an outer `GroupKFold(8)` over participants and an inner `GroupKFold(4)` over training participants
-   for hyper-parameters. Imputation and scaling sit inside the pipeline. Ratings are never binarised. A secondary analysis regresses test ratings at the participant level.
-5. **Evaluation.**
-   - Metrics at window, recording and participant level, with participant-bootstrap CIs.
-   - Paired Wilcoxon tests between models.
-   - A within-participant label-permutation test.
-   - Grouped permutation importance.
-   - Feature-subset ablations that isolate artifact-prone inputs.
-6. **Personalisation.** Approaches A (subject-independent), B1/B2 (normalisation) and C/D (calibration) are compared on identical late windows,
-   using the first 60 s of each recording for calibration.
-7. **Export.** `src/export_results.py` reads only the saved, validated outputs. The website contains no hand-entered result values.
+Removing eye-related signal costs 0.05–0.07 AUC; the corrected models stay near 0.81–0.83. An artifact-only model reaches
+0.77, with the horizontal eye-movement proxy (F7 − F8) the strongest single marker. Muscle-dominated γ is not used.
+Within-participant accuracy is close to 1, but time segments of a single recording are also partly separable, so that
+number partly reflects recognising the recording.
 
 ## Limitations
 
-- Rest vs. multitasking also differs in visual input, eye movements and motor activity, so "workload" here means task engagement, not graded difficulty.
-- There is one session per participant and one continuous recording per condition. Cross-session stability and genuine calibration benefit cannot be tested.
-- There are no EOG or EMG channels. Ocular and muscle contributions cannot be removed or fully separated from neural activity.
-- The documentation does not state the signal unit or the reference electrode (amplitude thresholds assume µV-like units).
-- Windows from one recording are correlated, so the effective sample size is ~48 participants.
-- Zero-phase filtering and whole-recording bad-channel detection are offline operations. A real-time system would need causal equivalents.
+- Rest is not a low-workload version of the task. The recordings differ in visual input, eye movement and posture as well as
+  mental effort.
+- STEW has no EOG or EMG channels. ICA and the artifact markers rely on proxies built from frontal EEG, so the remaining signal
+  cannot be shown to be purely neural.
+- One session per person and one continuous recording per condition: no test of stability across days, and within-person
+  results are an upper bound.
+- The participant (n = 48) is the independent unit; windows from one recording are correlated.
+- The dataset documentation does not state units or reference; amplitude thresholds assume µV-like units.
+- Zero-phase filtering, whole-recording bad-channel detection and ICA are offline operations.
 
-## Website and GitHub Pages deployment
+## Data
 
-The site is fully static and reads `website/data/*.json`. No Python runs on GitHub Pages.
+STEW: `subXX_lo.txt` is the resting recording and `subXX_hi.txt` the SIMKAP multitasking test (19 200 samples × 14 channels:
+AF3, F7, F3, FC5, T7, P7, O1, O2, P8, T8, FC6, F4, F8, AF4). `ratings.txt` holds `subject, rating at rest, rating for test`
+(1–9); ratings for subjects 5, 24 and 42 are missing. The raw data is not in this repository: download it from IEEE DataPort
+and place the files in `data/raw/STEW/`.
 
-1. Regenerate the data with `python src/export_results.py` and commit `website/`.
-2. In the repository settings, go to **Pages → Build and deployment → Source** and choose **GitHub Actions**.
-3. Push to `main`. The workflow `.github/workflows/pages.yml` uploads `website/` as the Pages artifact and deploys it.
+- W. L. Lim, O. Sourina, L. Wang, "STEW: Simultaneous Task EEG Workload Data Set," *IEEE Transactions on Neural Systems and
+  Rehabilitation Engineering*, 26(11), 2106–2114, 2018. doi:[10.1109/TNSRE.2018.2872924](https://doi.org/10.1109/TNSRE.2018.2872924)
+- STEW dataset, IEEE DataPort, 2018. doi:[10.21227/44r8-ya50](https://doi.org/10.21227/44r8-ya50), CC BY 4.0.
 
-The page loads Plotly.js 2.35.2 and KaTeX 0.16.11 from jsDelivr. Everything else is local.
+## Reproducing
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt          # exact versions used for the committed results (Python 3.13.1)
+pytest tests                             # dataset-structure tests skip when data/raw/STEW is absent
+
+for nb in notebooks/0*.ipynb; do jupyter nbconvert --to notebook --execute --inplace "$nb"; done
+python src/export_results.py             # writes website/data/*.json and the static numbers in website/index.html
+python src/site_render.py --check        # fails if index.html no longer matches metrics.json
+cd website && python -m http.server 8000
+```
+
+
+**Random seeds.** `modeling.SEED = 0` (shuffled `GroupKFold` folds, random forest, gradient boosting); participant bootstrap
+seed 0; label permutations seeds 1000–1099; ICA `random_state` 0 (`confounds.ICA_SEED`); plot jitter seeds are fixed in the
+notebooks and do not affect results.
+
+## Layout
+
+```
+notebooks/  01 exploration · 02 preprocessing · 03 features · 04 training · 05 evaluation · 06 personalisation · 07 artifact checks
+src/        data_loader, quality, preprocessing, feature_extraction, modeling, evaluation,
+            personalization, confounds, export_results, site_render
+tests/      pytest suite: synthetic-signal checks, dataset structure, website data and static HTML
+results/    per-notebook summaries, CSVs and figures
+website/    static site (HTML, CSS, JavaScript, Plotly.js); data/*.json written by export_results.py
+```
+
+## Results changelog
+
+Each entry lists the commit where a set of numbers first appeared. To trace any figure, check the matching JSON under
+`results/` at that commit.
+
+| Commit | Date | Change |
+|---|---|---|
+| `c7918c3`, `9e9fa94` | 2026-11-25 | Notebooks 01–06 and the website. Logistic regression window AUC 0.881 [0.84, 0.92], recording accuracy 0.865; rating regression R² −0.05. |
+| `9a05749` | 2026-11-25 | Notebook 07, artifact and drift analyses (table above). Earlier numbers unchanged. |
+
+Add a row whenever a re-run changes any reported number.
+
+## How to cite
+
+See `CITATION.cff` (author fields are still TODO). Please also cite the STEW paper and dataset above.
+
+TODO: author, year. *NeuroSense: classifying rest vs. multitasking from EEG in unseen participants.* https://github.com/RadiantVixen/NeuroSense
+
+## Website deployment
+
+The site is static and reads only `website/data/*.json`; nothing runs on GitHub's side. With Pages set to
+"Deploy from branch" (root), the root `index.html` redirects to `website/`. With Pages set to "GitHub Actions",
+`.github/workflows/pages.yml` publishes `website/` at the site root instead. `.github/workflows/tests.yml` runs the
+tests and the `site_render.py --check` on every push.
+
+## Author
+
+TODO: name or handle · TODO: contact · TODO: context (course / thesis / personal project)
