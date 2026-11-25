@@ -27,8 +27,12 @@ SITE_DATA = PROJECT_ROOT / "website" / "data"
 CFG = PreprocessConfig()
 
 
-def r(x, nd=4):
-    """Round floats recursively for compact JSON."""
+def r(x, nd=6):
+    """Round floats recursively for compact JSON.
+
+    6 decimals: the site rounds again to 2-3 decimals, and storing only 4 caused
+    double-rounding errors (e.g. 0.66854 -> 0.6685 -> 0.668 instead of 0.669).
+    """
     if isinstance(x, dict):
         return {k: r(v, nd) for k, v in x.items()}
     if isinstance(x, (list, tuple)):
