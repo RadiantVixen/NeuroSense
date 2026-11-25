@@ -57,3 +57,21 @@ def test_null_hero_value_is_rejected(metrics):
     bad["classification"][bad["best_model"]]["recording"]["accuracy"] = None
     with pytest.raises(site_render.MissingValue):
         site_render.bind_values(bad)
+
+
+def test_findings_and_confound_table_rendered(metrics):
+    page = (SITE / "index.html").read_text()
+    ins = re.search(r"<!-- BEGIN:insights -->(.*?)<!-- END:insights -->", page, re.S).group(1)
+    assert 4 <= ins.count('class="card finding"') <= 6
+    conf = re.search(r"<!-- BEGIN:confounds -->(.*?)<!-- END:confounds -->", page, re.S).group(1)
+    assert conf.count("<tr>") >= len(metrics["confounds"]["table"])
+    for r in metrics["confounds"]["table"]:
+        assert r["analysis"].replace("&", "&amp;") in conf
+
+
+def test_findings_fail_loudly_if_results_contradict_the_text(metrics):
+    bad = json.loads(json.dumps(metrics))
+    row = next(r for r in bad["confounds"]["table"] if r["analysis"].startswith("Without γ (1"))
+    row["delta_auc"], row["delta_lo"], row["delta_hi"] = -0.08, -0.12, -0.04  # pretend removing γ mattered
+    with pytest.raises(site_render.ClaimNoLongerHolds):
+        site_render.findings(bad)

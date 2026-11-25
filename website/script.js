@@ -154,7 +154,7 @@ function initExplorer(eeg) {
   const worst = subs[subs.length - 1];
   fillSelect($("#ex-rec"), keys.map((k) => {
     const r = eeg.recordings[k];
-    return [k, `Participant ${r.subject} · ${r.label}${r.subject === worst ? " (most artifacts)" : ""}`];
+    return [k, `Participant ${r.subject} · ${r.label}${r.subject === worst ? " (most rejected windows)" : ""}`];
   }));
   EX.key = keys[0]; EX.chans = new Set(eeg.channels);
   $("#ex-channels").innerHTML = eeg.channels.map((c) => `<button type="button" class="chip" data-ch="${c}" aria-pressed="true">${c}</button>`).join("");
@@ -332,16 +332,6 @@ function renderML(m, preds) {
   segToggle($("#imp-model").closest(".card").querySelector(".seg"), "kind", (v) => { kind = v; drawImp(); });
   drawImp();
 
-  // ablation
-  const ab = m.ablation, subsets = [...new Set(ab.map((d) => d.subset))];
-  plot("chart-ablation", [["logreg", C.aqua], ["grad_boost", C.violet]].map(([k, col]) => {
-    const rows = subsets.map((s) => ab.find((d) => d.subset === s && d.model === k));
-    return { type: "bar", orientation: "h", name: MODEL_LABEL[k], y: subsets, x: rows.map((r) => r.win_auc), marker: { color: col },
-      customdata: rows.map((r) => [r.n_features, r.rec_acc]), hovertemplate: `%{y} · ${MODEL_LABEL[k]}<br>window AUC %{x:.3f}<br>%{customdata[0]} features · recording acc. %{customdata[1]:.1%}<extra></extra>` };
-  }), { showlegend: true, barmode: "group", bargap: 0.3, bargroupgap: 0.12, margin: { l: 10 },
-        yaxis: { autorange: "reversed" }, xaxis: { range: [0.4, 1], title: { text: "window AUC (held-out participants)" } },
-        shapes: [{ type: "line", x0: 0.5, x1: 0.5, yref: "paper", y0: 0, y1: 1, line: { color: C.axis, width: 1 } }] });
-
   // prediction timeline
   const subs = preds.subjects;
   fillSelect($("#pred-subj"), subs.map((s) => [s.subject, `Participant ${s.subject}${s.auc != null ? ` · AUC ${fmt(s.auc, 2)}` : ""}`]));
@@ -375,50 +365,22 @@ function renderML(m, preds) {
          annotations: pe.results.map((r) => ({ x: APPROACH_LABEL[r.approach] || r.approach, y: 1.04, text: `median ${fmt(r.subject_auc_median, 2)}`, showarrow: false, font: { size: 10, color: C.text2 } })) });
 }
 
-/* ------------------------------------------------------------------ insights (numbers from JSON) */
-function renderInsights(m) {
-  const cl = m.classification, lr = cl.logreg, best = m.best_model;
-  const learned = ["logreg", "svm_rbf", "random_forest", "grad_boost"].filter((k) => cl[k]);
-  const aucs = learned.map((k) => cl[k].window.roc_auc);
-  const ab = (s, k = "logreg") => m.ablation.find((d) => d.subset === s && d.model === k);
-  const per = m.personalization.results, P = (k) => per.find((r) => r.approach === k);
-  const eta = m.features.eta2_median;
-  const reg = m.rating_regression.find((r) => r.model === "ridge");
-  const cards = [
-    ["Workload state is detectable in unseen people",
-      `All four learned models separate rest from multitasking on held-out participants (window AUC ${fmt(Math.min(...aucs), 2)}–${fmt(Math.max(...aucs), 2)}).
-       Averaging ~1 minute of windows per recording lifts accuracy to ${pct(cl[best].recording.accuracy, 0)} (${MODEL_LABEL[best]}).
-       A within-participant label-permutation test puts chance at AUC ≈ ${fmt(m.permutation_test.null_mean, 2)} (p = ${fmt(m.permutation_test.p_value, 3)}, ${m.permutation_test.n_permutations} permutations).`],
-    ["Simple models are enough",
-      `Regularised logistic regression (AUC ${fmt(lr.window.roc_auc, 3)}) matches SVM, random forest and gradient boosting within ~${fmt(Math.max(...aucs) - Math.min(...aucs), 2)} AUC.
-       The textbook frontal-θ / parietal-α index alone reaches only ${fmt(cl.classic_index.window.roc_auc, 2)}: combining many weak, noisy markers matters more than model capacity.`],
-    ["People differ more than conditions do",
-      `Participant identity explains a median ${pct(eta.subject, 0)} of feature variance versus ${pct(eta.condition, 1)} for rest-vs-test.
-       Within a single held-out person, logistic regression ranks windows almost perfectly (median per-participant AUC ${fmt(m.per_subject_tests.find((t) => t.model === "logreg").median_subject_auc, 2)}),
-       but pooled across people the AUC drops to ${fmt(lr.window.roc_auc, 2)}: each person's scores are shifted by an individual offset. Between-person variability, not the classifier, is the main limit.`],
-    ["Artifacts are a confound that cannot be ruled out",
-      `Test recordings contained more artifact (rejection ${pct(m.preprocessing.rejection_rate.hi, 1)} vs ${pct(m.preprocessing.rejection_rate.lo, 1)}), and the largest logistic-regression weights sit on F8, beside the right eye.
-       Artifact-proxy features alone (δ/γ power, kurtosis, skewness, line length) reach AUC ${fmt(ab("artifact proxies").win_auc, 2)} — about as high as posterior θ/α/β power alone (${fmt(ab("θ/α/β posterior").win_auc, 2)}).
-       Restricting to θ/α/β spectral features keeps performance (${fmt(ab("θ/α/β spectral").win_auc, 2)}). Both neural and ocular/muscle sources carry the rest-vs-task signal; without EOG/EMG references their contributions cannot be cleanly separated.`],
-    ["Simple baseline normalisation does not help",
-      `On identical late windows, a 1-minute resting baseline (B2) gives median per-participant AUC ${fmt(P("B2_rest_baseline").subject_auc_median, 2)} vs ${fmt(P("A_subject_independent").subject_auc_median, 2)} subject-independent (A),
-       and unsupervised per-participant z-scoring (B1) gives ${fmt(P("B1_subject_zscore").subject_auc_median, 2)} (recording accuracy ${pct(P("B1_subject_zscore").recording_acc, 0)} vs ${pct(P("A_subject_independent").recording_acc, 0)}) — no reliable gain.
-       Within-participant calibration looks near-perfect (C: ${fmt(P("C_subject_dependent").subject_auc_median, 2)}, D: ${fmt(P("D_hybrid").subject_auc_median, 2)}), but calibration and test windows come from the same continuous recording,
-       so the model can recognise the recording itself. That number is an upper bound, not evidence of real-world calibration benefit.`],
-    ["EEG does not predict how hard it felt",
-      `Among people doing the same test, EEG did not predict their self-rated workload: ridge regression R² = ${fmt(reg.r2, 2)} (equal to predicting the mean; n = 45),
-       and the classifier's score was unrelated to the rating (ρ = ${fmt(m.classifier_score_vs_rating.rho, 2)}, p = ${fmt(m.classifier_score_vs_rating.p, 2)}).
-       The system detects a <em>state change</em>, not a graded workload level.`],
-    ["Limitations",
-      `Rest vs. multitasking also differs in visual input, eye movements and motor activity, so “workload” here means task engagement. Single session per person;
-       14 consumer-grade dry-ish electrodes, frontal-heavy; unknown reference and units; 4 s windows from the same recording are correlated (hence participant-level CIs).
-       Zero-phase filtering is non-causal — a live system would need causal filters and online artifact handling.`],
-    ["Potential improvements",
-      `Datasets with graded difficulty levels (e.g. n-back) and multiple sessions to separate workload from task presence and test true cross-session calibration;
-       EOG/EMG channels or ICA with reference channels to remove ocular/muscle activity; Riemannian covariance features or domain adaptation to reduce between-person shift;
-       individual alpha-frequency–adjusted bands.`],
-  ];
-  $("#insights-grid").innerHTML = cards.map(([h, p], i) => `<div class="card${i >= 6 ? "" : ""}"><h3>${h}</h3><p class="muted">${p}</p></div>`).join("");
+/* ------------------------------------------------------------------ artifact analyses */
+function renderConfounds(m) {
+  const rows = m.confounds.table.filter((r) => r.auc != null).slice().reverse();
+  const ref = m.confounds.table.find((r) => r.section === "reference").auc;
+  plot("chart-confounds", [{
+    x: rows.map((r) => r.auc), y: rows.map((r) => r.analysis), type: "scatter", mode: "markers",
+    marker: { color: rows.map((r) => (r.section === "reference" ? C.text : r.section.startsWith("d") ? C.violet : C.cyan)), size: 10, line: { color: C.surface, width: 2 } },
+    error_x: { type: "data", symmetric: false, array: rows.map((r) => r.auc_hi - r.auc), arrayminus: rows.map((r) => r.auc - r.auc_lo), color: C.text3, thickness: 1.5, width: 4 },
+    customdata: rows.map((r) => [r.auc_lo, r.auc_hi, r.delta_auc, r.n_features]),
+    hovertemplate: "%{y}<br>AUC %{x:.3f} [%{customdata[0]:.3f}, %{customdata[1]:.3f}]<br>Δ vs all features %{customdata[2]:+.3f}<br>%{customdata[3]} features<extra></extra>",
+  }], {
+    margin: { l: 10, t: 10 }, xaxis: { title: { text: "ROC-AUC on held-out participants (95% CI)" }, range: [0.45, 1] },
+    yaxis: { tickfont: { size: 11 }, automargin: true },
+    shapes: [ref, 0.5].map((x, i) => ({ type: "line", x0: x, x1: x, yref: "paper", y0: 0, y1: 1, line: { color: i ? C.axis : C.text3, width: 1 } })),
+    annotations: [{ x: 0.5, y: 0, yref: "paper", text: "chance", showarrow: false, xanchor: "left", xshift: 4, yanchor: "bottom", font: { size: 10, color: C.text3 } }],
+  });
 }
 
 /* ------------------------------------------------------------------ utils */
@@ -449,10 +411,10 @@ async function main() {
     return;
   }
   if (!window.Plotly) { $$(".chart").forEach((el) => (el.innerHTML = '<p class="error small">Plotly.js failed to load (offline?).</p>')); }
-  if (!$("#insights-grid .card")) safe(() => renderInsights(DATA.metrics), "insights-grid");
   onVisible($("#about"), () => { safe(() => renderRatings(DATA.vis), "chart-ratings"); safe(renderMontage, "chart-montage"); });
   onVisible($("#processing"), () => safe(() => renderProcessing(DATA.vis, DATA.metrics), "chart-filter"));
   onVisible($("#ml"), () => safe(() => renderML(DATA.metrics, DATA.preds), "chart-models"));
+  onVisible($("#artifacts"), () => safe(() => renderConfounds(DATA.metrics), "chart-confounds"));
   loadJSON("eeg_examples").then((eeg) => {
     DATA.eeg = eeg;
     drawHeroTraces(eeg);

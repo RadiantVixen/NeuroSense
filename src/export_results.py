@@ -65,7 +65,8 @@ def build_metrics() -> dict:
     top = coef.reindex(coef.abs().sort_values(ascending=False).index).head(20)
     return r({
         "dataset": expl["dataset"] | {"ratings": expl["ratings"]},
-        "preprocessing": {k: pre[k] for k in ("config", "rejection_rate", "kept_windows", "n_windows_total")},
+        "preprocessing": {k: pre[k] for k in ("config", "rejection_rate", "kept_windows", "n_windows_total", "windows_per_recording")}
+            | {"n_bad_channels": len(pre["bad_channels"]), "n_channel_recordings": 96 * len(CHANNELS)},
         "features": feat,
         "models": tr["models"],
         "cv": tr["cv"],
@@ -80,6 +81,7 @@ def build_metrics() -> dict:
         "rating_regression": tr["rating_regression"],
         "classifier_score_vs_rating": tr["classifier_score_vs_rating_spearman"],
         "personalization": pe,
+        "confounds": load_json(RES / "07_confounds" / "summary.json"),
         "per_subject_auc": per_subject,
         "personalization_per_subject": pers_subject,
     })
