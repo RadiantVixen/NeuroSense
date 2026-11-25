@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NeuroSense — EEG Cognitive Workload Estimation</title>
+<meta name="description" content="Research pipeline estimating task-induced cognitive workload from 14-channel EEG (STEW dataset): signal processing, feature engineering, subject-independent machine learning.">
+<meta name="theme-color" content="#08101f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f1b33'/%3E%3Cpath d='M3 17h5l2-6 4 12 4-16 3 10h8' fill='none' stroke='%232fd3e6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script defer src="script.js"></script>
+</head>
+<body>
+
+<nav class="nav" aria-label="Sections">
+  <div class="nav-inner">
+    <a class="brand" href="#top">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f1b33"/><path d="M3 17h5l2-6 4 12 4-16 3 10h8" fill="none" stroke="#2fd3e6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      NeuroSense
+    </a>
+    <div class="nav-links">
+      <a href="#about">About</a>
+      <a href="#explorer">EEG Explorer</a>
+      <a href="#processing">Signal Processing</a>
+      <a href="#ml">Machine Learning</a>
+      <a href="#insights">Insights</a>
+      <a href="#docs">Documentation</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ================================================================ HERO -->
+<header class="hero" id="top">
+  <canvas id="hero-wave" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <span class="badge"><span class="dot"></span>Offline research prototype · recorded dataset, no live acquisition</span>
+    <h1><span>NeuroSense</span></h1>
+    <p class="lead">EEG-based cognitive workload estimation. A reproducible pipeline that filters 14-channel EEG,
+      extracts spectral and time-domain features, and tests — on people the model has never seen — whether brain signals
+      reveal when someone is under multitasking load.</p>
+    <div class="cta">
+      <a class="btn primary" href="#ml">View results</a>
+      <a class="btn" href="https://github.com/RadiantVixen/NeuroSense" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub repository
+      </a>
+      <a class="btn" href="#docs">How it works</a>
+    </div>
+    <div class="stats" id="hero-stats" aria-live="polite">
+      <div class="stat"><div class="v">48</div><div class="k">participants</div></div>
+      <div class="stat"><div class="v">14</div><div class="k">EEG channels · 128 Hz</div></div>
+      <div class="stat"><div class="v" data-bind="hero.recAcc">—</div><div class="k" data-bind="hero.recAccLabel">recording-level accuracy, unseen subjects</div></div>
+      <div class="stat"><div class="v" data-bind="hero.auc">—</div><div class="k" data-bind="hero.aucLabel">window-level ROC-AUC</div></div>
+    </div>
+  </div>
+</header>
+
+<main>
+<!-- ================================================================ ABOUT -->
+<section id="about" class="wrap reveal">
+  <span class="eyebrow">01 · About</span>
+  <h2>Can EEG tell rest from mental multitasking — in a new person?</h2>
+  <p class="lead">Mental workload monitoring could support pilots, operators and learners, but EEG varies enormously between people.
+    NeuroSense asks a deliberately strict question: trained on some people, can a model detect task-induced workload in someone it has never seen?</p>
+  <div class="grid g3">
+    <div class="card">
+      <h3>Objective</h3>
+      <p class="muted">Build a transparent, end-to-end EEG pipeline — preprocessing, feature engineering, classical machine learning — and evaluate it
+        with participant-independent cross-validation so reported numbers reflect generalisation to new users.</p>
+    </div>
+    <div class="card">
+      <h3>Dataset — STEW</h3>
+      <dl class="kv">
+        <dt>Participants</dt><dd>48</dd>
+        <dt>Headset</dt><dd>Emotiv EPOC, 14 channels</dd>
+        <dt>Sampling</dt><dd>128 Hz, 2.5 min per recording</dd>
+        <dt>Conditions</dt><dd><span style="color:var(--rest)">●</span> rest · <span style="color:var(--test)">●</span> SIMKAP multitasking</dd>
+        <dt>Self-ratings</dt><dd>workload 1–9, 45 participants</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h3>Research motivation</h3>
+      <p class="muted">Most published STEW results mix windows from the same person into training and test sets, which inflates accuracy.
+        Here every evaluation is on held-out participants, artifacts are treated as a potential confound, and limitations are reported alongside results.</p>
+    </div>
+  </div>
+  <div class="callout warn">
+    <strong>What the labels mean.</strong> Per the dataset documentation, <code>lo</code> files are <em>resting-state</em> recordings and
+    <code>hi</code> files are recorded during the SIMKAP multitasking test. The task is therefore <strong>rest vs. task-induced workload</strong>,
+    not low- vs. high-difficulty task. All <span data-bind="about.nRated">45</span> rated participants reported higher workload during the test
+    (median <span data-bind="about.restMed">—</span> at rest vs <span data-bind="about.testMed">—</span> during the test, on a 1–9 scale).
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Self-reported workload</h3>
+      <p class="sub">Each line is one participant; ratings jittered slightly to show overlaps.</p>
+      <div id="chart-ratings" class="chart short"></div>
+    </div>
+    <div class="card">
+      <h3>Electrode montage</h3>
+      <p class="sub">The 14 EPOC electrodes (10–20 positions). Eight of 14 are frontal — close to the eyes and forehead muscles.</p>
+      <div id="chart-montage" class="chart short"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ EXPLORER -->
+<section id="explorer" class="wrap reveal">
+  <span class="eyebrow">02 · EEG Explorer</span>
+  <h2>Inspect the recorded signals</h2>
+  <p class="lead">A 10-second excerpt (60–70 s) of selected recordings, before and after preprocessing. This is <strong>playback of recorded data</strong>,
+    not a live headset stream.</p>
+  <div class="card" style="margin-top:28px">
+    <div class="controls">
+      <label>Recording <select id="ex-rec" aria-label="Recording"></select></label>
+      <div class="seg" role="group" aria-label="Signal version">
+        <button type="button" data-ver="raw" aria-pressed="false">Raw</button>
+        <button type="button" data-ver="filtered" aria-pressed="true">Filtered 1–45 Hz</button>
+      </div>
+      <span class="small muted" id="ex-meta"></span>
+    </div>
+    <div class="controls">
+      <div class="chips" id="ex-channels" role="group" aria-label="Channels"></div>
+      <button type="button" class="chip" id="ex-all">all</button>
+    </div>
+    <div id="chart-eeg" class="chart tall"></div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Frequency spectrum</h3>
+      <p class="sub">Welch PSD of the whole recording for the first selected channel, raw vs. filtered (log scale).</p>
+      <div id="chart-ex-psd" class="chart"></div>
+    </div>
+    <div class="card">
+      <h3>What you are looking at</h3>
+      <ul class="clean">
+        <li><strong>Raw</strong> signals carry a ~4 300-unit DC offset (removed for display) and slow drift.</li>
+        <li><strong>Filtered</strong> signals: 50 Hz notch + zero-phase 1–45 Hz Butterworth band-pass.</li>
+        <li>Large slow deflections on AF3/AF4/F7/F8 are typically <strong>eye blinks or movements</strong>; sharp bursts on T7/T8 are often <strong>jaw/temporal muscle</strong>.</li>
+        <li>The steep drop above ~42 Hz in every raw spectrum is the headset's on-board filter — the reason the analysis stops at 45 Hz.</li>
+        <li>The last recording in the list is the participant with the <em>most</em> rejected windows, shown for honesty.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ PROCESSING -->
+<section id="processing" class="wrap reveal">
+  <span class="eyebrow">03 · Signal Processing</span>
+  <h2>From voltages to features</h2>
+  <p class="lead">Each step is label-blind and applied identically to every recording. Learned transforms (scaling, imputation) live inside the cross-validated model.</p>
+  <div class="pipeline" aria-label="Processing pipeline">
+    <div class="step"><div class="n">01</div><h4>Mask</h4><p>Saturated / flat samples flagged on raw data, ±1 s margin.</p></div>
+    <div class="step"><div class="n">02</div><h4>Filter</h4><p>Median DC removal, 50 Hz notch, 1–45 Hz zero-phase band-pass.</p></div>
+    <div class="step"><div class="n">03</div><h4>Bad channels</h4><p>Robust SD &gt; 4× the recording median → excluded.</p></div>
+    <div class="step"><div class="n">04</div><h4>Segment</h4><p>4 s windows, 2 s step, 2 s edge trim.</p></div>
+    <div class="step"><div class="n">05</div><h4>Reject</h4><p>Windows with masked samples or |x| &gt; 200.</p></div>
+    <div class="step"><div class="n">06</div><h4>Features</h4><p>282 per window: band powers, ratios, entropy, Hjorth.</p></div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Filter frequency response</h3>
+      <p class="sub">Effective gain of the zero-phase chain (squared magnitude: −6 dB at the cut-offs).</p>
+      <div id="chart-filter" class="chart"></div>
+    </div>
+    <div class="card">
+      <h3>Group spectrum: rest vs. test</h3>
+      <p class="sub">Mean log<sub>10</sub> PSD over 48 participants (channel average, filtered), shaded 95% CI; bands marked.</p>
+      <div id="chart-group-psd" class="chart"></div>
+    </div>
+    <div class="card">
+      <h3>Band-power change during the task</h3>
+      <p class="sub">Median within-participant log<sub>10</sub>(test / rest) relative power. ● = FDR q &lt; 0.05. Descriptive only — not used to choose features.</p>
+      <div id="chart-contrast" class="chart"></div>
+    </div>
+    <div class="card">
+      <h3>Artifact rejection threshold</h3>
+      <p class="sub">Share of windows rejected per condition as the amplitude threshold varies; 200 was chosen.</p>
+      <div id="chart-sweep" class="chart"></div>
+    </div>
+    <div class="card">
+      <h3>Feature distributions</h3>
+      <div class="controls"><label>Feature <select id="feat-sel" aria-label="Feature"></select></label>
+        <span class="legend-inline"><span><i style="background:var(--rest)"></i>rest</span><span><i style="background:var(--test)"></i>test</span></span></div>
+      <div id="chart-feat" class="chart short"></div>
+      <p class="small muted" id="feat-desc"></p>
+    </div>
+    <div class="card">
+      <h3>Who explains the variance?</h3>
+      <p class="sub">Median share of feature variance explained by participant identity vs. condition (η²), per feature group.</p>
+      <div id="chart-eta" class="chart"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ ML -->
+<section id="ml" class="wrap reveal">
+  <span class="eyebrow">04 · Machine Learning</span>
+  <h2>Subject-independent classification</h2>
+  <p class="lead">Nested cross-validation grouped by participant: 8 outer folds test on 6 unseen people each; hyper-parameters are tuned on training participants only.
+    Confidence intervals resample participants, not windows.</p>
+
+  <div class="card" style="margin-top:28px">
+    <h3>Model comparison</h3>
+    <p class="sub">Window-level ROC-AUC with 95% participant-bootstrap CI, and recording-level accuracy (window scores averaged per recording).</p>
+    <div id="chart-models" class="chart"></div>
+    <div class="table-wrap"><table id="tbl-metrics" aria-label="Model metrics"></table></div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h3>Confusion matrix</h3>
+      <div class="controls">
+        <label>Model <select id="cm-model" aria-label="Model"></select></label>
+        <div class="seg" role="group" aria-label="Level">
+          <button type="button" data-lvl="window" aria-pressed="true">Windows</button>
+          <button type="button" data-lvl="recording" aria-pressed="false">Recordings</button>
+        </div>
+      </div>
+      <div id="chart-cm" class="chart short"></div>
+    </div>
+    <div class="card">
+      <h3>Per-participant performance</h3>
+      <p class="sub">AUC within each held-out participant (each dot is one person).</p>
+      <div id="chart-subj" class="chart short"></div>
+    </div>
+    <div class="card">
+      <h3>Feature importance</h3>
+      <div class="controls">
+        <label>Model <select id="imp-model" aria-label="Importance model"></select></label>
+        <div class="seg" role="group" aria-label="Grouping">
+          <button type="button" data-kind="group" aria-pressed="true">Feature groups</button>
+          <button type="button" data-kind="channel" aria-pressed="false">Channels</button>
+        </div>
+      </div>
+      <p class="sub">Drop in held-out AUC when a whole group is permuted (mean ± SD over folds).</p>
+      <div id="chart-imp" class="chart tall"></div>
+    </div>
+    <div class="card">
+      <h3>Is it brain state or artifact?</h3>
+      <p class="sub">Same cross-validation with feature subsets. Artifact-prone inputs: eye-adjacent channels, δ/γ bands, waveform-shape features.</p>
+      <div id="chart-ablation" class="chart tall"></div>
+    </div>
+    <div class="card span2">
+      <h3>Workload predictions for a held-out participant</h3>
+      <div class="controls">
+        <label>Participant <select id="pred-subj" aria-label="Participant"></select></label>
+        <span class="small muted" id="pred-meta"></span>
+      </div>
+      <div id="chart-pred" class="chart"></div>
+      <p class="small muted">Each point is one 4 s window, scored by a model trained without this participant. Gaps are windows rejected as artifacts.</p>
+    </div>
+    <div class="card span2">
+      <h3>Personalisation</h3>
+      <p class="sub">All strategies scored on the same late windows (≥ 64 s) of each recording; calibration data come from the first 60 s.</p>
+      <div id="chart-pers" class="chart"></div>
+      <div class="callout warn small">Each condition in STEW is a single continuous recording. Within-participant calibration can succeed partly by recognising
+        <em>the recording</em> (electrode contact, drift) rather than the cognitive state — those numbers are an upper bound.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ INSIGHTS -->
+<section id="insights" class="wrap reveal">
+  <span class="eyebrow">05 · Research Insights</span>
+  <h2>What the experiments show</h2>
+  <div class="grid g2" id="insights-grid"></div>
+</section>
+
+<!-- ================================================================ DOCS -->
+<section id="docs" class="wrap reveal">
+  <span class="eyebrow">06 · Technical Documentation</span>
+  <h2>Methods & mathematics</h2>
+  <p class="lead">The complete code, notebooks and tests are in the repository. The key operations, in brief:</p>
+
+  <details open>
+    <summary>Zero-phase Butterworth filtering</summary>
+    <div>
+      <p>A Butterworth filter of order \(n\) has maximally flat pass-band magnitude \(|H(f)|^2 = 1/\big(1+(f/f_c)^{2n}\big)\). Running it forward and then
+        backward (<code>sosfiltfilt</code>) gives the overall response \(H(f)\,H^*(f)=|H(f)|^2\): real-valued, hence <strong>zero phase</strong> (no time shift),
+        with doubled roll-off. Second-order sections keep the 1 Hz high-pass (1/64 of Nyquist) numerically stable. A notch at 50 Hz (\(Q=30\), bandwidth ≈ 1.7 Hz)
+        places zeros on the unit circle at \(e^{\pm j2\pi f_0/f_s}\).</p>
+    </div>
+  </details>
+  <details>
+    <summary>Robust artifact statistics</summary>
+    <div>
+      <p>Amplitude outliers are measured with the median absolute deviation, \(\hat\sigma = 1.4826\cdot\mathrm{median}|x-\mathrm{median}(x)|\), which, unlike the
+        standard deviation, is not inflated by the artifacts it is meant to detect. Windows are rejected if any good channel exceeds ±200 (≈ µV) after filtering,
+        or overlaps a saturated / flat-lined segment.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Welch power spectral density & band power</summary>
+    <div>
+      <p>Each 4 s window is split into \(K=5\) Hann-tapered 2 s segments with 75% overlap:
+        \[\hat P(f)=\frac{1}{K}\sum_{k=1}^{K}\frac{1}{f_s\sum_n w[n]^2}\Big|\sum_{n}w[n]\,x_k[n]\,e^{-j2\pi fn/f_s}\Big|^2\]
+        Averaging reduces the variance of the periodogram (whose standard deviation equals its mean) roughly by \(K\). Band power is
+        \(P_b=\sum_{f\in[f_1,f_2)}\hat P(f)\,\Delta f\) with \(\Delta f = 0.5\) Hz; by Parseval the total equals the signal variance. Relative power is \(P_b/P_{1\text{–}45}\).</p>
+      <p>Bands: δ 1–4, θ 4–8, α 8–13, β 13–30, γ 30–45 Hz. The upper limit follows the headset's on-board roll-off; individual alpha peaks of the participants ranged 7.5–12.5 Hz.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Spectral entropy, ratios, Hjorth parameters</summary>
+    <div>
+      <p><strong>Spectral entropy</strong>: \(H=-\sum_k p_k\log p_k/\log N\) with \(p_k=\hat P(f_k)/\sum_j \hat P(f_j)\) — 0 for a pure tone, 1 for white noise.</p>
+      <p><strong>Ratios</strong> (log<sub>10</sub>): θ/α, θ/β, engagement index β/(α+θ) (Pope et al., 1995), and frontal θ / parietal α (task-load index).</p>
+      <p><strong>Hjorth</strong>: activity \(\mathrm{var}(x)\); mobility \(\sqrt{\mathrm{var}(x')/\mathrm{var}(x)}\) (≈ mean frequency); complexity = mobility(\(x'\)) / mobility(\(x\)).</p>
+    </div>
+  </details>
+  <details>
+    <summary>Models & validation</summary>
+    <div>
+      <p><strong>Logistic regression</strong>: \(P(y=1\mid x)=\sigma(w^\top x+b)\), minimising log-loss \(+\tfrac{1}{2C}\lVert w\rVert^2\).
+        <strong>SVM</strong>: maximum-margin classifier with RBF kernel \(k(x,x')=e^{-\gamma\lVert x-x'\rVert^2}\).
+        <strong>Random forest</strong>: bagged, feature-subsampled trees. <strong>Gradient boosting</strong>: trees fitted sequentially to the negative gradient of the log-loss.</p>
+      <p>Outer <code>GroupKFold(8)</code> over participants; inner <code>GroupKFold(4)</code> over training participants for hyper-parameters; imputation and standardisation
+        fitted inside each training fold. AUC is threshold-free: the probability that a random test window scores above a random rest window.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Dataset reference & reproduction</summary>
+    <div>
+      <p>W. L. Lim, O. Sourina, L. Wang, “STEW: Simultaneous Task EEG Workload Data Set,” <em>IEEE Trans. Neural Systems and Rehabilitation Engineering</em>, 26(11), 2106–2114, 2018.
+        <a href="https://doi.org/10.1109/TNSRE.2018.2872924" target="_blank" rel="noopener">doi:10.1109/TNSRE.2018.2872924</a> ·
+        Dataset: IEEE DataPort, <a href="https://doi.org/10.21227/44r8-ya50" target="_blank" rel="noopener">doi:10.21227/44r8-ya50</a> (CC BY 4.0).</p>
+      <p>Reproduce: download STEW into <code>data/raw/STEW/</code>, run notebooks 01–06 in order, then <code>python src/export_results.py</code> to regenerate the JSON this page reads.
+        Source: <a href="https://github.com/RadiantVixen/NeuroSense" target="_blank" rel="noopener">github.com/RadiantVixen/NeuroSense</a>.</p>
+    </div>
+  </details>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>NeuroSense · offline EEG research prototype. Not a medical device; no live data is acquired.</span>
+    <span>Data: STEW (CC BY 4.0) · Charts: Plotly.js</span>
+  </div>
+</footer>
+</body>
+</html>
