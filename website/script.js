@@ -392,17 +392,31 @@ function onVisible(el, fn) {
   const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); fn(); } }, { rootMargin: "300px" });
   io.observe(el);
 }
-function initReveal() {
-  const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("in")), { threshold: 0.05 }) : null;
-  $$(".reveal").forEach((el) => (io ? io.observe(el) : el.classList.add("in")));
+/* Highlight the nav link of the section in view. (Sections are always visible; an earlier
+   fade-in kept them at opacity 0 until observed, which left the page blank after #anchor jumps.) */
+function initNavSpy() {
+  if (!("IntersectionObserver" in window)) return;
   const links = $$(".nav-links a"), secs = links.map((a) => $(a.getAttribute("href")));
   const spy = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) links.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === `#${e.target.id}`)); }), { rootMargin: "-45% 0px -50% 0px" });
   secs.forEach((s) => s && spy.observe(s));
 }
+
+/* The browser jumps to #anchor before charts and data have finished laying out, so the
+   target moves and the jump lands in the wrong place. Re-apply it after each layout change,
+   unless the visitor has already started scrolling. */
+let userScrolled = false;
+["wheel", "touchstart", "keydown", "mousedown"].forEach((ev) => addEventListener(ev, () => { userScrolled = true; }, { once: true, passive: true }));
+function settleHash() {
+  if (userScrolled || !location.hash) return;
+  const t = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  if (t) t.scrollIntoView({ block: "start" });
+}
+
 function safe(fn, id) { try { fn(); } catch (e) { console.error(e); const el = id && document.getElementById(id); if (el) el.innerHTML = `<p class="error small">Could not render: ${e.message}</p>`; } }
 
 async function main() {
-  initReveal();
+  initNavSpy();
+  settleHash();
   if (window.renderMathInElement) renderMathInElement($("#docs"), { delimiters: [{ left: "\\[", right: "\\]", display: true }, { left: "\\(", right: "\\)", display: false }], throwOnError: false });
   try {
     [DATA.metrics, DATA.vis, DATA.preds] = await Promise.all(["metrics", "visualizations", "predictions"].map(loadJSON));
@@ -419,6 +433,11 @@ async function main() {
     DATA.eeg = eeg;
     drawHeroTraces(eeg);
     onVisible($("#explorer"), () => safe(() => initExplorer(eeg), "chart-eeg"));
+    settleHash();
   }).catch((e) => { $("#chart-eeg").innerHTML = `<p class="error small">${e.message}</p>`; });
 }
 document.addEventListener("DOMContentLoaded", main);
+addEventListener("load", () => {
+  settleHash();
+  setTimeout(() => { settleHash(); document.documentElement.classList.add("ready"); }, 800);
+});
