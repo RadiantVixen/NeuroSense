@@ -1,0 +1,136 @@
+{
+  "config": {
+    "hp_hz": 1.0,
+    "lp_hz": 45.0,
+    "filter_order": 4,
+    "notch_hz": 50.0,
+    "notch_q": 30.0,
+    "rail_low": 100.0,
+    "rail_high": 8300.0,
+    "flat_min_samples": 32,
+    "mask_margin_s": 1.0,
+    "window_s": 4.0,
+    "step_s": 2.0,
+    "edge_trim_s": 2.0,
+    "abs_thresh": 200.0,
+    "bad_channel_ratio": 4.0,
+    "reference": "original"
+  },
+  "n_windows_total": 6912,
+  "windows_per_recording": 72,
+  "rejection_rate": {
+    "hi": 0.2445,
+    "lo": 0.1484
+  },
+  "rejection_reason_rate": {
+    "mask": 0.024739583333333332,
+    "amplitude": 0.19372106481481483
+  },
+  "kept_windows": {
+    "total": 5554,
+    "by_condition": {
+      "lo": 2943,
+      "hi": 2611
+    },
+    "min_per_recording": 6,
+    "median_per_recording": 60.0
+  },
+  "bad_channels": [
+    {
+      "subject": 1,
+      "condition": "lo",
+      "channel": "T7"
+    },
+    {
+      "subject": 6,
+      "condition": "lo",
+      "channel": "FC5"
+    },
+    {
+      "subject": 13,
+      "condition": "lo",
+      "channel": "P8"
+    },
+    {
+      "subject": 23,
+      "condition": "hi",
+      "channel": "F3"
+    },
+    {
+      "subject": 30,
+      "condition": "lo",
+      "channel": "F7"
+    },
+    {
+      "subject": 30,
+      "condition": "hi",
+      "channel": "FC6"
+    },
+    {
+      "subject": 33,
+      "condition": "lo",
+      "channel": "T7"
+    },
+    {
+      "subject": 38,
+      "condition": "lo",
+      "channel": "F3"
+    },
+    {
+      "subject": 38,
+      "condition": "hi",
+      "channel": "F3"
+    },
+    {
+      "subject": 40,
+      "condition": "lo",
+      "channel": "AF3"
+    },
+    {
+      "subject": 40,
+      "condition": "hi",
+      "channel": "AF3"
+    },
+    {
+      "subject": 41,
+      "condition": "lo",
+      "channel": "F3"
+    }
+  ],
+  "threshold_sweep": [
+    {
+      "threshold": 100,
+      "test": 0.579,
+      "rest": 0.4722,
+      "rest \u2212 test gap": -0.1068
+    },
+    {
+      "threshold": 150,
+      "test": 0.3406,
+      "rest": 0.25,
+      "rest \u2212 test gap": -0.0906
+    },
+    {
+      "threshold": 200,
+      "test": 0.2445,
+      "rest": 0.1484,
+      "rest \u2212 test gap": -0.0961
+    },
+    {
+      "threshold": 250,
+      "test": 0.1939,
+      "rest": 0.1065,
+      "rest \u2212 test gap": -0.0874
+    },
+    {
+      "threshold": 300,
+      "test": 0.167,
+      "rest": 0.0865,
+      "rest \u2212 test gap": -0.0804
+    }
+  ],
+  "car_rejection_rate": {
+    "hi": 0.2124,
+    "lo": 0.1276
+  }
+}

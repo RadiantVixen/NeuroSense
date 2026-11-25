@@ -1,0 +1,25 @@
+# Raw dataset (CC BY 4.0, distributed by IEEE DataPort - download it yourself)
+data/raw/
+STEW Dataset/
+*.zip
+
+# Generated intermediate data and models
+data/processed/*
+data/features/*
+models/*
+!data/processed/.gitkeep
+!data/features/.gitkeep
+!models/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

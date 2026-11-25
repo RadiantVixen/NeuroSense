@@ -1,0 +1,146 @@
+{
+  "task": "binary rest (0) vs SIMKAP multitasking (1); window-level input, 4 s windows",
+  "cv": {
+    "outer": "GroupKFold(8, shuffle=True, random_state=0) over subjects",
+    "inner": "GroupKFold(4) over training subjects, scoring roc_auc"
+  },
+  "models": {
+    "chance": "predicts the training-set class prior; AUC = 0.5 by construction",
+    "logreg": "L2-regularised logistic regression",
+    "svm_rbf": "support vector machine, Gaussian (RBF) kernel",
+    "random_forest": "random forest, 400 trees",
+    "grad_boost": "histogram gradient boosting (handles NaN natively)",
+    "classic_index": "logistic regression on log(frontal theta / parietal alpha)"
+  },
+  "quick_metrics": [
+    {
+      "model": "classic_index",
+      "win_auc": 0.6449,
+      "win_bal_acc": 0.6026,
+      "win_f1": 0.5528,
+      "rec_auc": 0.6892,
+      "rec_acc": 0.6562,
+      "train_time_s": 0.044
+    },
+    {
+      "model": "chance",
+      "win_auc": 0.472,
+      "win_bal_acc": 0.5,
+      "win_f1": 0.0,
+      "rec_auc": 0.4891,
+      "rec_acc": 0.5,
+      "train_time_s": 0.0611
+    },
+    {
+      "model": "logreg",
+      "win_auc": 0.8808,
+      "win_bal_acc": 0.8004,
+      "win_f1": 0.789,
+      "rec_auc": 0.957,
+      "rec_acc": 0.8646,
+      "train_time_s": 31.6435
+    },
+    {
+      "model": "svm_rbf",
+      "win_auc": 0.8773,
+      "win_bal_acc": 0.7931,
+      "win_f1": 0.7826,
+      "rec_auc": 0.9583,
+      "rec_acc": 0.875,
+      "train_time_s": 38.1686
+    },
+    {
+      "model": "random_forest",
+      "win_auc": 0.8769,
+      "win_bal_acc": 0.8015,
+      "win_f1": 0.7902,
+      "rec_auc": 0.951,
+      "rec_acc": 0.8854,
+      "train_time_s": 109.9105
+    },
+    {
+      "model": "grad_boost",
+      "win_auc": 0.8625,
+      "win_bal_acc": 0.7933,
+      "win_f1": 0.7886,
+      "rec_auc": 0.9284,
+      "rec_acc": 0.8646,
+      "train_time_s": 212.3352
+    }
+  ],
+  "best_params_per_fold": {
+    "chance": [
+      "{}",
+      "{}",
+      "{}",
+      "{}",
+      "{}",
+      "{}",
+      "{}",
+      "{}"
+    ],
+    "logreg": [
+      "{'clf__C': 0.01}",
+      "{'clf__C': 0.01}",
+      "{'clf__C': 0.01}",
+      "{'clf__C': 0.01}",
+      "{'clf__C': 0.01}",
+      "{'clf__C': 0.001}",
+      "{'clf__C': 0.1}",
+      "{'clf__C': 0.01}"
+    ],
+    "svm_rbf": [
+      "{'clf__C': 0.1}",
+      "{'clf__C': 1.0}",
+      "{'clf__C': 0.1}",
+      "{'clf__C': 0.1}",
+      "{'clf__C': 0.1}",
+      "{'clf__C': 0.1}",
+      "{'clf__C': 1.0}",
+      "{'clf__C': 1.0}"
+    ],
+    "random_forest": [
+      "{'clf__min_samples_leaf': 10}",
+      "{'clf__min_samples_leaf': 1}",
+      "{'clf__min_samples_leaf': 1}",
+      "{'clf__min_samples_leaf': 10}",
+      "{'clf__min_samples_leaf': 10}",
+      "{'clf__min_samples_leaf': 10}",
+      "{'clf__min_samples_leaf': 1}",
+      "{'clf__min_samples_leaf': 10}"
+    ],
+    "grad_boost": [
+      "{'clf__learning_rate': 0.1, 'clf__max_leaf_nodes': 31}",
+      "{'clf__learning_rate': 0.1, 'clf__max_leaf_nodes': 31}",
+      "{'clf__learning_rate': 0.1, 'clf__max_leaf_nodes': 31}",
+      "{'clf__learning_rate': 0.1, 'clf__max_leaf_nodes': 31}",
+      "{'clf__learning_rate': 0.1, 'clf__max_leaf_nodes': 7}",
+      "{'clf__learning_rate': 0.03, 'clf__max_leaf_nodes': 31}",
+      "{'clf__learning_rate': 0.1, 'clf__max_leaf_nodes': 31}",
+      "{'clf__learning_rate': 0.1, 'clf__max_leaf_nodes': 31}"
+    ]
+  },
+  "rating_regression": [
+    {
+      "model": "ridge",
+      "mae": 1.2536,
+      "rmse": 1.4392,
+      "r2": -0.0475,
+      "n": 45.0,
+      "spearman_rho": -0.969
+    },
+    {
+      "model": "mean_baseline",
+      "mae": 1.2525,
+      "rmse": 1.4381,
+      "r2": -0.046,
+      "n": 45.0,
+      "spearman_rho": NaN
+    }
+  ],
+  "classifier_score_vs_rating_spearman": {
+    "model": "logreg",
+    "rho": 0.16581623766395,
+    "p": 0.2763367786573042
+  }
+}

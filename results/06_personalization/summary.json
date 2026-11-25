@@ -1,0 +1,69 @@
+{
+  "protocol": {
+    "calibration": "windows fully within first 60 s",
+    "evaluation": "windows starting >= 64 s",
+    "model": "logistic regression C=0.01",
+    "n_subjects": 46,
+    "excluded_subjects": [
+      18,
+      27
+    ]
+  },
+  "results": [
+    {
+      "approach": "A_subject_independent",
+      "window_auc": 0.877688956967115,
+      "window_bal_acc": 0.797184350240274,
+      "recording_acc": 0.8804347826086957,
+      "subject_auc_median": 0.9659757523705694,
+      "subject_auc_mean": 0.892002334101565,
+      "subjects_auc_ge_0.8": 38,
+      "n_subjects": 46,
+      "p_vs_A": NaN
+    },
+    {
+      "approach": "B1_subject_zscore",
+      "window_auc": 0.8828120284790828,
+      "window_bal_acc": 0.8033290807566396,
+      "recording_acc": 0.9130434782608695,
+      "subject_auc_median": 0.9349067755259125,
+      "subject_auc_mean": 0.8601856458145711,
+      "subjects_auc_ge_0.8": 35,
+      "n_subjects": 46,
+      "p_vs_A": 0.05188733094709367
+    },
+    {
+      "approach": "B2_rest_baseline",
+      "window_auc": 0.8654985608531238,
+      "window_bal_acc": 0.7997090488310964,
+      "recording_acc": 0.8478260869565217,
+      "subject_auc_median": 0.97012474516719,
+      "subject_auc_mean": 0.8832842805493727,
+      "subjects_auc_ge_0.8": 37,
+      "n_subjects": 46,
+      "p_vs_A": 0.7998246844187258
+    },
+    {
+      "approach": "C_subject_dependent",
+      "window_auc": 0.9815235601767353,
+      "window_bal_acc": 0.9484847854183099,
+      "recording_acc": 0.9891304347826086,
+      "subject_auc_median": 0.9990525381150381,
+      "subject_auc_mean": 0.9845641745598287,
+      "subjects_auc_ge_0.8": 46,
+      "n_subjects": 46,
+      "p_vs_A": 1.5232562744110237e-06
+    },
+    {
+      "approach": "D_hybrid",
+      "window_auc": 0.9811048235874403,
+      "window_bal_acc": 0.9332785285113414,
+      "recording_acc": 1.0,
+      "subject_auc_median": 0.9935876378965809,
+      "subject_auc_mean": 0.9807735196919211,
+      "subjects_auc_ge_0.8": 46,
+      "n_subjects": 46,
+      "p_vs_A": 1.833929268464112e-08
+    }
+  ]
+}

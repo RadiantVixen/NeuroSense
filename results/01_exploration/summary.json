@@ -1,0 +1,214 @@
+{
+  "dataset": {
+    "n_subjects": 48,
+    "n_recordings": 96,
+    "fs_hz": 128,
+    "channels": [
+      "AF3",
+      "F7",
+      "F3",
+      "FC5",
+      "T7",
+      "P7",
+      "O1",
+      "O2",
+      "P8",
+      "T8",
+      "FC6",
+      "F4",
+      "F8",
+      "AF4"
+    ],
+    "samples_per_recording": 19200,
+    "duration_s": 150.0,
+    "conditions": {
+      "lo": "rest",
+      "hi": "test"
+    },
+    "nan_values": 0,
+    "inf_values": 0
+  },
+  "ratings": {
+    "n_subjects_rated": 45,
+    "missing_subjects": [
+      5,
+      24,
+      42
+    ],
+    "rest": {
+      "count": 45.0,
+      "mean": 1.8,
+      "std": 1.014,
+      "min": 1.0,
+      "25%": 1.0,
+      "50%": 1.0,
+      "75%": 2.0,
+      "max": 5.0
+    },
+    "test": {
+      "count": 45.0,
+      "mean": 6.578,
+      "std": 1.422,
+      "min": 4.0,
+      "25%": 5.0,
+      "50%": 7.0,
+      "75%": 8.0,
+      "max": 9.0
+    },
+    "n_test_gt_rest": 45,
+    "wilcoxon_p": 4.296699258700829e-09,
+    "spearman_rest_test": 0.3645238881755315
+  },
+  "quality": {
+    "provisional_rules": {
+      "flat_run_samples_gt": 128,
+      "extreme_frac_gt": 0.01,
+      "robust_z_k": 6,
+      "big_abs_gt": 200,
+      "big_frac_gt": 0.05,
+      "highpass_hz": 1.0
+    },
+    "channel_recordings_flagged": 348,
+    "channel_recordings_total": 1344,
+    "recordings_with_any_flag": 75,
+    "flag_rate_by_condition": {
+      "hi": 0.3259,
+      "lo": 0.192
+    },
+    "line50_median_ratio": 1.3180573813374012,
+    "recordings_line50_ratio_gt3": [
+      [
+        2,
+        "lo"
+      ],
+      [
+        5,
+        "lo"
+      ],
+      [
+        10,
+        "lo"
+      ],
+      [
+        10,
+        "hi"
+      ],
+      [
+        11,
+        "lo"
+      ],
+      [
+        11,
+        "hi"
+      ],
+      [
+        14,
+        "lo"
+      ],
+      [
+        14,
+        "hi"
+      ],
+      [
+        17,
+        "hi"
+      ],
+      [
+        19,
+        "lo"
+      ],
+      [
+        19,
+        "hi"
+      ],
+      [
+        20,
+        "lo"
+      ],
+      [
+        20,
+        "hi"
+      ],
+      [
+        23,
+        "lo"
+      ],
+      [
+        25,
+        "lo"
+      ],
+      [
+        25,
+        "hi"
+      ],
+      [
+        29,
+        "hi"
+      ],
+      [
+        30,
+        "lo"
+      ],
+      [
+        32,
+        "lo"
+      ],
+      [
+        32,
+        "hi"
+      ],
+      [
+        34,
+        "lo"
+      ],
+      [
+        35,
+        "lo"
+      ],
+      [
+        35,
+        "hi"
+      ],
+      [
+        37,
+        "lo"
+      ],
+      [
+        37,
+        "hi"
+      ],
+      [
+        40,
+        "hi"
+      ],
+      [
+        41,
+        "hi"
+      ],
+      [
+        43,
+        "hi"
+      ],
+      [
+        44,
+        "hi"
+      ],
+      [
+        47,
+        "hi"
+      ],
+      [
+        48,
+        "lo"
+      ],
+      [
+        48,
+        "hi"
+      ]
+    ]
+  },
+  "band_contrast": {
+    "n_significant_fdr05": 30,
+    "n_tests": 70
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "n_windows": 5554,
+  "n_features": 282,
+  "groups": {
+    "time": 84,
+    "abs_delta": 14,
+    "abs_theta": 14,
+    "abs_alpha": 14,
+    "abs_beta": 14,
+    "abs_gamma": 14,
+    "rel_delta": 14,
+    "rel_theta": 14,
+    "rel_alpha": 14,
+    "rel_beta": 14,
+    "rel_gamma": 14,
+    "spec_ent": 14,
+    "ratios": 44
+  },
+  "windows_by_condition": {
+    "lo": 2943,
+    "hi": 2611
+  },
+  "bands_hz": {
+    "delta": [
+      1.0,
+      4.0
+    ],
+    "theta": [
+      4.0,
+      8.0
+    ],
+    "alpha": [
+      8.0,
+      13.0
+    ],
+    "beta": [
+      13.0,
+      30.0
+    ],
+    "gamma": [
+      30.0,
+      45.0
+    ]
+  },
+  "total_band_hz": [
+    1.0,
+    45.0
+  ],
+  "welch": {
+    "nperseg": 256,
+    "noverlap": 192,
+    "window": "hann"
+  },
+  "iaf_rest_hz": {
+    "n_detected": 38,
+    "median": 10.0,
+    "min": 7.5,
+    "max": 12.5
+  },
+  "eta2_median": {
+    "subject": 0.37035678355192325,
+    "condition": 0.00811340929450995
+  }
+}
