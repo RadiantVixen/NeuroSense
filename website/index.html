@@ -53,13 +53,14 @@
     <div class="stats" id="hero-stats" aria-live="polite">
       <div class="stat"><div class="v">48</div><div class="k">participants</div></div>
       <div class="stat"><div class="v">14</div><div class="k">EEG channels · 128 Hz</div></div>
-      <div class="stat"><div class="v" data-bind="hero.recAcc">—</div><div class="k" data-bind="hero.recAccLabel">recording-level accuracy, unseen subjects</div></div>
-      <div class="stat"><div class="v" data-bind="hero.auc">—</div><div class="k" data-bind="hero.aucLabel">window-level ROC-AUC</div></div>
+      <div class="stat"><div class="v" data-bind="hero.recAcc">86.5%</div><div class="k" data-bind="hero.recAccLabel">of recordings classified correctly, participants not seen in training (logistic regression)</div></div>
+      <div class="stat"><div class="v" data-bind="hero.auc">0.88</div><div class="k" data-bind="hero.aucLabel">ROC-AUC on 4 s windows (95% CI 0.84–0.92)</div></div>
     </div>
   </div>
 </header>
 
 <main>
+<noscript><div class="wrap"><p class="callout">The interactive charts need JavaScript. The headline numbers, the model table and the findings below are plain HTML.</p></div></noscript>
 <!-- ================================================================ ABOUT -->
 <section id="about" class="wrap reveal">
   <span class="eyebrow">01 · About</span>
@@ -92,7 +93,7 @@
     <strong>What the labels mean.</strong> Per the dataset documentation, <code>lo</code> files are <em>resting-state</em> recordings and
     <code>hi</code> files are recorded during the SIMKAP multitasking test. The task is therefore <strong>rest vs. task-induced workload</strong>,
     not low- vs. high-difficulty task. All <span data-bind="about.nRated">45</span> rated participants reported higher workload during the test
-    (median <span data-bind="about.restMed">—</span> at rest vs <span data-bind="about.testMed">—</span> during the test, on a 1–9 scale).
+    (median <span data-bind="about.restMed">1</span> at rest vs <span data-bind="about.testMed">7</span> during the test, on a 1–9 scale).
   </div>
   <div class="grid g2">
     <div class="card">
@@ -208,7 +209,7 @@
     <h3>Model comparison</h3>
     <p class="sub">Window-level ROC-AUC with 95% participant-bootstrap CI, and recording-level accuracy (window scores averaged per recording).</p>
     <div id="chart-models" class="chart"></div>
-    <div class="table-wrap"><table id="tbl-metrics" aria-label="Model metrics"></table></div>
+    <div class="table-wrap" id="tbl-metrics"><!-- BEGIN:metrics-table --><table aria-label="Model metrics"><thead><tr><th>Model</th><th>Accuracy</th><th>Bal. acc.</th><th>Precision</th><th>Recall</th><th>Specificity</th><th>F1</th><th>ROC-AUC [95% CI]</th><th>Rec. acc.</th><th>Rec. AUC</th></tr></thead><tbody><tr><td>Chance (training prior)</td><td>0.530</td><td>0.500</td><td>0.000</td><td>0.000</td><td>1.000</td><td>0.000</td><td>0.472 <span class="ci">[0.50, 0.50]</span></td><td>0.500</td><td>0.502</td></tr><tr><td>Frontal θ / parietal α index</td><td>0.608</td><td>0.603</td><td>0.596</td><td>0.515</td><td>0.690</td><td>0.553</td><td>0.645 <span class="ci">[0.59, 0.70]</span></td><td>0.656</td><td>0.689</td></tr><tr class="best"><td>Logistic regression</td><td>0.801</td><td>0.800</td><td>0.786</td><td>0.792</td><td>0.809</td><td>0.789</td><td>0.881 <span class="ci">[0.84, 0.92]</span></td><td>0.865</td><td>0.957</td></tr><tr><td>SVM (RBF kernel)</td><td>0.793</td><td>0.793</td><td>0.773</td><td>0.792</td><td>0.794</td><td>0.783</td><td>0.877 <span class="ci">[0.84, 0.91]</span></td><td>0.875</td><td>0.958</td></tr><tr><td>Random forest</td><td>0.802</td><td>0.801</td><td>0.787</td><td>0.794</td><td>0.809</td><td>0.790</td><td>0.877 <span class="ci">[0.84, 0.91]</span></td><td>0.885</td><td>0.951</td></tr><tr><td>Gradient boosting</td><td>0.791</td><td>0.793</td><td>0.752</td><td>0.829</td><td>0.758</td><td>0.789</td><td>0.863 <span class="ci">[0.81, 0.91]</span></td><td>0.865</td><td>0.928</td></tr></tbody><caption>Window columns: 5554 held-out 4 s windows. Recording columns: 96 recordings, window scores averaged. Positive class = multitasking test. CIs resample participants (1000 bootstrap draws).</caption></table><!-- END:metrics-table --></div>
   </div>
 
   <div class="grid g2">
@@ -268,7 +269,7 @@
 <section id="insights" class="wrap reveal">
   <span class="eyebrow">05 · Research Insights</span>
   <h2>What the experiments show</h2>
-  <div class="grid g2" id="insights-grid"></div>
+  <div class="grid g2" id="insights-grid"><!-- BEGIN:insights --><!-- END:insights --></div>
 </section>
 
 <!-- ================================================================ DOCS -->

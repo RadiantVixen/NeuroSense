@@ -217,3 +217,5 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
 
 /* long display formulas scroll inside their own box on narrow screens */
 .katex-display { overflow-x: auto; overflow-y: hidden; padding-block: 4px; }
+
+table caption { caption-side: bottom; text-align: left; padding-top: 8px; color: var(--text-3); font-size: 12.5px; }

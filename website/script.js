@@ -108,17 +108,6 @@ function drawHeroTraces(eeg) {
     ctx.strokeStyle = k % 2 ? "rgba(47,211,230,0.35)" : "rgba(59,157,255,0.35)"; ctx.lineWidth = 1; ctx.stroke();
   });
 }
-function renderHero(m) {
-  const best = m.best_model, cls = m.classification[best];
-  const set = (k, v) => $$(`[data-bind="${k}"]`).forEach((e) => (e.textContent = v));
-  set("hero.recAcc", pct(cls.recording.accuracy, 1));
-  set("hero.recAccLabel", `recording-level accuracy on unseen participants (${MODEL_LABEL[best]})`);
-  set("hero.auc", fmt(cls.window.roc_auc, 2));
-  set("hero.aucLabel", `window-level ROC-AUC (95% CI ${fmt(cls.window.auc_ci[0], 2)}–${fmt(cls.window.auc_ci[1], 2)})`);
-  const r = m.dataset.ratings;
-  set("about.nRated", r.n_subjects_rated); set("about.restMed", r.rest["50%"]); set("about.testMed", r.test["50%"]);
-}
-
 /* ------------------------------------------------------------------ about */
 function renderRatings(v) {
   const rows = v.ratings; const rng = mulberry(7);
@@ -296,10 +285,6 @@ function renderML(m, preds) {
        annotations: [{ xref: "paper", x: 1, y: 0.5, text: "chance", showarrow: false, xanchor: "right", yanchor: "bottom", font: { size: 10, color: C.text3 } }] });
 
   const best = models.filter((k) => !["chance", "classic_index"].includes(k)).reduce((a, b) => (cl[a].window.roc_auc >= cl[b].window.roc_auc ? a : b));
-  $("#tbl-metrics").innerHTML = `<thead><tr><th>Model</th><th>Accuracy</th><th>Bal. acc.</th><th>Precision</th><th>Recall</th><th>Specificity</th><th>F1</th><th>ROC-AUC [95% CI]</th><th>Rec. acc.</th><th>Rec. AUC</th></tr></thead><tbody>` +
-    models.map((k) => { const w = cl[k].window, r = cl[k].recording; return `<tr class="${k === best ? "best" : ""}"><td>${MODEL_LABEL[k]}</td><td>${fmt(w.accuracy)}</td><td>${fmt(w.balanced_accuracy)}</td><td>${fmt(w.precision)}</td><td>${fmt(w.recall)}</td><td>${fmt(w.specificity)}</td><td>${fmt(w.f1)}</td><td>${fmt(w.roc_auc)} <span class="ci">[${fmt(w.auc_ci[0], 2)}, ${fmt(w.auc_ci[1], 2)}]</span></td><td>${fmt(r.accuracy)}</td><td>${fmt(r.roc_auc)}</td></tr>`; }).join("") +
-    `</tbody><caption class="small muted" style="caption-side:bottom;text-align:left;padding-top:8px">Window metrics on ${cl[best].window.cm.flat().reduce((a, b) => a + b, 0)} held-out windows; recording metrics on 96 recordings. Positive class = test. Highlighted: best window AUC.</caption>`;
-
   // confusion matrix
   const cmModels = models.filter((k) => k !== "chance");
   fillSelect($("#cm-model"), cmModels.map((k) => [k, MODEL_LABEL[k]]));
@@ -464,8 +449,7 @@ async function main() {
     return;
   }
   if (!window.Plotly) { $$(".chart").forEach((el) => (el.innerHTML = '<p class="error small">Plotly.js failed to load (offline?).</p>')); }
-  safe(() => renderHero(DATA.metrics));
-  safe(() => renderInsights(DATA.metrics), "insights-grid");
+  if (!$("#insights-grid .card")) safe(() => renderInsights(DATA.metrics), "insights-grid");
   onVisible($("#about"), () => { safe(() => renderRatings(DATA.vis), "chart-ratings"); safe(renderMontage, "chart-montage"); });
   onVisible($("#processing"), () => safe(() => renderProcessing(DATA.vis, DATA.metrics), "chart-filter"));
   onVisible($("#ml"), () => safe(() => renderML(DATA.metrics, DATA.preds), "chart-models"));

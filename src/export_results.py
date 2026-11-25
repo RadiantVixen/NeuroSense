@@ -214,6 +214,8 @@ def main():
         (RES / f"{name}.json").write_text(txt)
         (SITE_DATA / f"{name}.json").write_text(txt)
     (SITE_DATA / "eeg_examples.json").write_text(json.dumps(r(examples, 3), separators=(",", ":")))
+    import site_render  # write the headline numbers into index.html as static HTML
+    site_render.main([])
     for p in sorted(SITE_DATA.iterdir()):
         print(f"{p.relative_to(PROJECT_ROOT)}: {p.stat().st_size / 1e3:.0f} kB")
 
