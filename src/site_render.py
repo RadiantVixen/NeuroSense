@@ -57,9 +57,9 @@ def bind_values(m: dict) -> dict[str, str]:
     rt = m["dataset"]["ratings"]
     return {
         "hero.recAcc": pct(rec["accuracy"]),
-        "hero.recAccLabel": f"of recordings classified correctly, participants not seen in training ({MODEL_LABEL[best].lower()})",
+        "hero.recAccLabel": f"recording-level accuracy on held-out participants ({MODEL_LABEL[best].lower()})",
         "hero.auc": f(w["roc_auc"], 2),
-        "hero.aucLabel": f"ROC-AUC on 4 s windows (95% CI {f(w['auc_ci'][0], 2)}–{f(w['auc_ci'][1], 2)})",
+        "hero.aucLabel": f"window-level ROC-AUC (95% CI {f(w['auc_ci'][0], 2)}–{f(w['auc_ci'][1], 2)})",
         "about.nRated": str(rt["n_subjects_rated"]),
         "about.restMed": f(rt["rest"]["50%"], 0),
         "about.testMed": f(rt["test"]["50%"], 0),
@@ -197,37 +197,37 @@ def findings(m: dict) -> list[dict]:
     top_ch = "; ".join(f'{c["name"]}, {LOCATION[c["name"]]} ({f(c["mean"], 3)})' for c in ch[:3])
     brain_drop = [-post["delta_auc"], -ica["delta_auc"]]
     return [
-        {"title": "282 features beat a single classic index by a wide margin",
-         "html": f"<p>The frontal-θ / parietal-α ratio, a standard EEG workload index, reaches a window AUC of {_n(idx['window']['roc_auc'])} on held-out people "
-                 f"and classifies {pct(idx['recording']['accuracy'])} of recordings correctly. Logistic regression on all features reaches "
+        {"title": "The full feature set outperforms the classic θ/α workload index",
+         "html": f"<p>The frontal-θ / parietal-α ratio, a standard EEG workload index, achieves a window AUC of {_n(idx['window']['roc_auc'])} on held-out people "
+                 f"and classifies {pct(idx['recording']['accuracy'])} of recordings correctly. Logistic regression on all 282 features achieves "
                  f"{_n(lr['window']['roc_auc'])} and {pct(lr['recording']['accuracy'])}.</p>"},
-        {"title": "Four different models, the same result",
-         "html": f"<p>Logistic regression, SVM, random forest and gradient boosting land between {_n(min(aucs.values()))} and {_n(max(aucs.values()))} AUC. "
+        {"title": "Model choice has no significant effect",
+         "html": f"<p>Logistic regression, SVM, random forest and gradient boosting achieve between {_n(min(aucs.values()))} and {_n(max(aucs.values()))} AUC. "
                  f"Paired per-participant tests against logistic regression give Holm-corrected "
                  f"{'; '.join(f'p = {f(holm[k], 2)} ({MODEL_LABEL[k]})' for k in LEARNED if k != 'logreg')}. "
-                 f"Extra model flexibility buys nothing here. What limits accuracy is how different people are: the participant explains a median "
+                 f"Additional model flexibility yields no gain; performance is limited by inter-individual variability: participant identity explains a median "
                  f"{pct(eta['subject'], 0)} of a feature's variance, rest vs. test {pct(eta['condition'], 1)}.</p>"},
-        {"title": "The model leans on electrodes near the right eye and temple",
-         "html": f"<p>Shuffling one channel's features at a time, the largest AUC drops are for {top_ch}. "
-                 f"By feature type, relative θ power matters most (AUC drop {f(grp[0]['mean'], 3)}). Section 05 tests how much of this is eye and muscle activity.</p>"},
-        {"title": "Eye movements explain part of the result, not all of it",
-         "html": f"<p>Six artifact markers alone reach {_auc_ci(art)}. The horizontal eye-movement proxy (F7 − F8, 1–4 Hz) is the strongest single one, "
+        {"title": "Right frontal and temporal channels contribute most",
+         "html": f"<p>Permuting one channel's features at a time, the largest AUC drops occur for {top_ch}. "
+                 f"By feature type, relative θ power matters most (AUC drop {f(grp[0]['mean'], 3)}). Section 05 examines the extent to which this reflects ocular and muscle activity.</p>"},
+        {"title": "Ocular artifacts explain part, but not all, of the performance",
+         "html": f"<p>Six artifact markers alone achieve {_auc_ci(art)}. The horizontal eye-movement proxy (F7 − F8, 1–4 Hz) is the strongest single marker, "
                  f"with AUC {f(uni['heog_logpow'], 2)}; blink rate does not differ between conditions (median {f(bl['rest_median'], 1)} vs "
                  f"{f(bl['test_median'], 1)} per minute, p = {f(bl['wilcoxon_p'], 2)}). Removing eye components with ICA gives {_auc_ci(ica)}, and using only "
-                 f"the four posterior channels gives {_auc_ci(post)}: {f(min(brain_drop), 3)}–{f(max(brain_drop), 3)} below the full model, but far from chance. "
-                 f"Removing γ, where jaw and forehead muscle dominate, changes nothing (Δ {sgn(nog['delta_auc'])}, 95% CI "
+                 f"the four posterior channels gives {_auc_ci(post)}: {f(min(brain_drop), 3)}–{f(max(brain_drop), 3)} below the full model, but well above chance. "
+                 f"Removing γ, where jaw and forehead muscle activity dominates, has no measurable effect (Δ {sgn(nog['delta_auc'])}, 95% CI "
                  f"{sgn(nog['delta_lo'])} to {sgn(nog['delta_hi'])}).</p>"},
-        {"title": "Self-rated workload was not predictable",
-         "html": f"<p>Among people doing the same test, ridge regression on their EEG predicted their 1–9 rating no better than predicting the average: "
-                 f"R² = {f(reg['r2'], 2)} (mean-only baseline {f(base['r2'], 2)}), MAE {f(reg['mae'], 2)}, n = {int(reg['n'])}. The classifier's score was also "
-                 f"unrelated to the rating (Spearman ρ = {f(sr['rho'], 2)}, p = {f(sr['p'], 2)}). The EEG separates the two situations; it gives no evidence "
-                 f"of tracking how hard the task felt to each person. With 45 people this is a weak test, not proof that no relation exists.</p>"},
-        {"title": "Within-person accuracy is near ceiling, but partly for the wrong reason",
-         "html": f"<p>Trained on the first half of a person's own recordings and tested on the second half, the model reaches {_n(e2['auc'])}. "
-                 f"But a model asked to tell early from late windows <em>within one recording</em>, where the task does not change, also succeeds "
-                 f"(median AUC {f(e3['median_auc'], 2)} over {e3['n_recordings']} recordings; {e3['n_ge_0_8']} of them ≥ 0.8), so recordings drift enough to be "
+        {"title": "Self-reported workload could not be predicted from EEG",
+         "html": f"<p>Within the test condition, ridge regression on EEG features did not outperform a mean-only baseline in predicting 1–9 ratings: "
+                 f"R² = {f(reg['r2'], 2)} (mean-only baseline {f(base['r2'], 2)}), MAE {f(reg['mae'], 2)}, n = {int(reg['n'])}. The classifier output was also "
+                 f"uncorrelated with the ratings (Spearman ρ = {f(sr['rho'], 2)}, p = {f(sr['p'], 2)}). The EEG distinguishes the two conditions but shows no evidence "
+                 f"of tracking perceived task difficulty. With n = {int(reg['n'])}, this test has limited power and does not rule out a relationship.</p>"},
+        {"title": "Within-participant accuracy is inflated by recording drift",
+         "html": f"<p>Trained on the first half of each participant's recordings and tested on the second half, the model achieves {_n(e2['auc'])}. "
+                 f"However, a model distinguishing early from late windows <em>within a single recording</em>, where the condition is constant, also performs above chance "
+                 f"(median AUC {f(e3['median_auc'], 2)} over {e3['n_recordings']} recordings; {e3['n_ge_0_8']} of them ≥ 0.8), indicating that recording drift makes segments "
                  f"partly identifiable. Across people, training on first halves and testing on second halves leaves AUC unchanged "
-                 f"({f(e1['auc'])} vs {f(e1['ref_auc'])}). Simple per-person normalisation did not help either: median per-person AUC "
+                 f"({f(e1['auc'])} vs {f(e1['ref_auc'])}). Per-participant normalisation did not improve performance: median per-person AUC "
                  f"{f(pers['A_subject_independent']['subject_auc_median'], 2)} without it, {f(pers['B1_subject_zscore']['subject_auc_median'], 2)} with a z-score, "
                  f"{f(pers['B2_rest_baseline']['subject_auc_median'], 2)} with a resting baseline.</p>"},
     ]
@@ -240,11 +240,11 @@ def confound_reading(m: dict) -> str:
     drops = [-r["delta_auc"] for r in (post, ica, ica30, _row(m, "Without AF3"))]
     return (f"<p>Removing eye-related signal in any of four ways (posterior channels only, no eye-adjacent channels, ICA, ICA without γ) lowers the AUC by "
             f"{f(min(drops), 3)}–{f(max(drops), 3)}. The most conservative of these, ICA-cleaned data with γ removed, still reaches {f(ica30['auc'])} "
-            f"(95% CI {f(ica30['auc_lo'], 2)}–{f(ica30['auc_hi'], 2)}), against {f(ref['auc'])} for the full model. Six artifact markers on their own reach "
-            f"{f(art['auc'])}.</p><p>So eye activity accounts for part of the full model's accuracy, and the corrected models keep most of it. That remainder "
-            f"is not proven to be brain activity: ICA removes only what matches the frontal eye proxies, and STEW has no EOG channel to check against.</p>"
+            f"(95% CI {f(ica30['auc_lo'], 2)}–{f(ica30['auc_hi'], 2)}), against {f(ref['auc'])} for the full model. Six artifact markers alone achieve "
+            f"{f(art['auc'])}.</p><p>Ocular activity therefore accounts for part of the full model's performance, but the corrected models retain most of it. "
+            f"The remaining signal cannot be confirmed as neural: ICA removes only components matching the frontal eye proxies, and STEW provides no EOG channel for validation.</p>"
             f"<p>ICA removed on average {f(i['mean_removed']['lo'], 2)} components from rest recordings and {f(i['mean_removed']['hi'], 2)} from test recordings, "
-            f"so the correction was not biased towards one condition. It lowered 1–4 Hz power at AF3 by a median {f(-i['frontal_delta_change_db_median']['AF3']['lo'], 1)} dB "
+            f"indicating no condition bias in the correction. It lowered 1–4 Hz power at AF3 by a median {f(-i['frontal_delta_change_db_median']['AF3']['lo'], 1)} dB "
             f"(rest) and {f(-i['frontal_delta_change_db_median']['AF3']['hi'], 1)} dB (test), and at O1 by {f(-i['frontal_delta_change_db_median']['O1']['lo'], 2)} dB.</p>")
 
 

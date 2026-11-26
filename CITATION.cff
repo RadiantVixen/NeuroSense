@@ -1,17 +1,9 @@
-# TODO: fill in the author fields before publishing; nothing here has been filled in on your behalf.
 cff-version: 1.2.0
 message: "If you use this code or its results, please cite it as below, and cite the STEW dataset."
 type: software
 title: "NeuroSense: classifying rest vs. multitasking from EEG in unseen participants (STEW)"
-authors:
-  - family-names: "TODO"
-    given-names: "TODO"
-    # orcid: "https://orcid.org/TODO"
 repository-code: "https://github.com/RadiantVixen/NeuroSense"
 url: "https://radiantvixen.github.io/NeuroSense/"
-license: "TODO"
-date-released: "TODO"   # YYYY-MM-DD of the release you cite
-version: "TODO"         # e.g. the commit hash or tag; see 'Results changelog' in README.md
 keywords:
   - EEG
   - mental workload

@@ -112,9 +112,7 @@ Add a row whenever a re-run changes any reported number.
 
 ## How to cite
 
-See `CITATION.cff` (author fields are still TODO). Please also cite the STEW paper and dataset above.
-
-TODO: author, year. *NeuroSense: classifying rest vs. multitasking from EEG in unseen participants.* https://github.com/RadiantVixen/NeuroSense
+See `CITATION.cff`. Please also cite the STEW paper and dataset above.
 
 ## Website deployment
 
@@ -122,7 +120,3 @@ The site is static and reads only `website/data/*.json`; nothing runs on GitHub'
 "Deploy from branch" (root), the root `index.html` redirects to `website/`. With Pages set to "GitHub Actions",
 `.github/workflows/pages.yml` publishes `website/` at the site root instead. `.github/workflows/tests.yml` runs the
 tests and the `site_render.py --check` on every push.
-
-## Author
-
-TODO: name or handle · TODO: contact · TODO: context (course / thesis / personal project)
